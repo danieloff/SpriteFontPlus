@@ -586,9 +586,64 @@ namespace FontStashSharp
 
 			return advance;
 		}
+		
+		public List<Rectangle> GetGlyphRectsFull(float x, float y, string str){
+			List<Rectangle> Rects = new List<Rectangle>();
+			if (string.IsNullOrEmpty(str)) return Rects;
 
-		public List<Rectangle> GetGlyphRects(float x, float y, string str)
-		{
+			GlyphCollection glyphs;
+			float ascent, lineHeight;
+			PreDraw(str, out glyphs, out ascent, out lineHeight);
+
+			var q = new FontGlyphSquad();
+			y += ascent;
+
+			float minx, maxx, miny, maxy;
+			minx = maxx = x;
+			miny = maxy = y;
+			float startx = x;
+
+			FontGlyph prevGlyph = null;
+
+			Rectangle l = new Rectangle((int)x, (int)y, 0, _fontSize);
+
+			for (int i = 0; i < str.Length; i += char.IsSurrogatePair(str, i) ? 2 : 1)
+			{
+				var codepoint = char.ConvertToUtf32(str, i);
+
+				if (codepoint == '\n') {
+					l = new Rectangle((int)l.X, l.Y, 0, (int)(l.Height));
+					Rects.Add(l);
+					x = startx;
+					y += lineHeight;
+					prevGlyph = null;
+					continue;
+				}
+
+				var glyph = GetGlyph(null, glyphs, codepoint);
+				if (glyph == null)
+				{
+					l = new Rectangle((int)l.X, l.Y, 0, (int)(l.Height));
+					Rects.Add(l);
+					continue;
+				}
+
+				GetQuad(glyph, prevGlyph, Spacing, ref x, ref y, ref q);
+
+				l = new Rectangle((int)q.X0, (int)q.Y0, (int)(q.X1-q.X0), (int)(q.Y1-q.Y0));
+				Rects.Add(l);
+				prevGlyph = glyph;
+
+				if (char.IsSurrogatePair(str, i)) {
+					l = new Rectangle((int)l.X, l.Y, 0, (int)(l.Height)); //ignore the width on the second part of surrogate? //TODO see how this works on input
+					Rects.Add(l);
+				}
+			}
+
+			return Rects;
+		}
+
+		public List<Rectangle> GetGlyphRects(float x, float y, string str){
 			List<Rectangle> Rects = new List<Rectangle>();
 			if (string.IsNullOrEmpty(str)) return Rects;
 
