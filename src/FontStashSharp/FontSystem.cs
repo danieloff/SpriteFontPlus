@@ -170,16 +170,61 @@ namespace FontStashSharp
 			}
 		}
 
-        internal double GetDescent()
+		private void PreDraw2(string str, out GlyphCollection glyphs, out float ascent, out float lineHeight, out float descent, out float lineHeightBasic)
+		{
+			glyphs = GetGlyphsCollection(FontSize);
+
+			// Determine ascent and lineHeight from first character
+			ascent = 0;
+			lineHeight = 0;
+			descent = 0;
+			lineHeightBasic = 0;
+			for (int i = 0; i < str.Length; i += char.IsSurrogatePair(str, i) ? 2 : 1)
+			{
+				var codepoint = char.ConvertToUtf32(str, i);
+
+				var glyph = GetGlyph(null, glyphs, codepoint);
+				if (glyph == null)
+				{
+					continue;
+				}
+
+				ascent = glyph.Font.Ascent;
+				descent = glyph.Font.Descent;
+				lineHeightBasic = glyph.Font.LineHeight;
+				lineHeight = glyph.Font.LineHeight + LineSpacing;
+				break;
+			}
+		}
+
+		internal double GetDescent()
         {
 			GlyphCollection glyphs;
-			float ascent, lineHeight;
+			float ascent, lineHeight, descent, lineHeightBasic;
 			var str = " ";
-			PreDraw(str, out glyphs, out ascent, out lineHeight);
-			return lineHeight - ascent;
+			PreDraw2(str, out glyphs, out ascent, out lineHeight, out descent, out lineHeightBasic);
+			return descent;
         }
 
-        public float DrawText(SpriteBatch batch, float x, float y, string str, Color color, float depth)
+		internal double GetAscent()
+		{
+			GlyphCollection glyphs;
+			float ascent, lineHeight, descent, lineHeightBasic;
+			var str = " ";
+			PreDraw2(str, out glyphs, out ascent, out lineHeight, out descent, out lineHeightBasic);
+			return ascent;
+		}
+
+		internal double GetLineHeightBasic()
+		{
+			GlyphCollection glyphs;
+			float ascent, lineHeight, descent, lineHeightBasic;
+			var str = " ";
+			PreDraw2(str, out glyphs, out ascent, out lineHeight, out descent, out lineHeightBasic);
+			return lineHeightBasic;
+		}
+
+		public float DrawText(SpriteBatch batch, float x, float y, string str, Color color, float depth)
 		{
 			if (string.IsNullOrEmpty(str)) return 0.0f;
 

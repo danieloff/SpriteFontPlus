@@ -148,7 +148,17 @@ namespace SpriteFontPlus
 			return _fontSystem.GetDescent();
         }
 
-        public float DrawString(SpriteBatch batch, StringBuilder text, Vector2 pos, Color[] glyphColors, Vector2 scale, float depth = 0f)
+		public double GetAscent()
+		{
+			return _fontSystem.GetAscent();
+		}
+
+		public double GetLineHeightBasic()
+		{
+			return _fontSystem.GetLineHeightBasic();
+		}
+
+		public float DrawString(SpriteBatch batch, StringBuilder text, Vector2 pos, Color[] glyphColors, Vector2 scale, float depth = 0f)
 		{
 			_fontSystem.Scale = scale;
 
