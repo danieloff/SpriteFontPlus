@@ -170,7 +170,16 @@ namespace FontStashSharp
 			}
 		}
 
-		public float DrawText(SpriteBatch batch, float x, float y, string str, Color color, float depth)
+        internal double GetDescent()
+        {
+			GlyphCollection glyphs;
+			float ascent, lineHeight;
+			var str = " ";
+			PreDraw(str, out glyphs, out ascent, out lineHeight);
+			return lineHeight - ascent;
+        }
+
+        public float DrawText(SpriteBatch batch, float x, float y, string str, Color color, float depth)
 		{
 			if (string.IsNullOrEmpty(str)) return 0.0f;
 
