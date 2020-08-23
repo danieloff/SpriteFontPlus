@@ -1,7 +1,9 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MonoGame.Extended;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace FontStashSharp
@@ -204,27 +206,32 @@ namespace FontStashSharp
 				GetQuad(glyph, prevGlyph, Spacing, ref originX, ref originY, ref q);
 				if (!glyph.IsEmpty)
 				{
-					q.X0 = (int)(q.X0 * Scale.X);
-					q.X1 = (int)(q.X1 * Scale.X);
-					q.Y0 = (int)(q.Y0 * Scale.Y);
-					q.Y1 = (int)(q.Y1 * Scale.Y);
+					q.X0 = (q.X0 * Scale.X);
+					q.X1 = (q.X1 * Scale.X);
+					q.Y0 = (q.Y0 * Scale.Y);
+					q.Y1 = (q.Y1 * Scale.Y);
 
-					var destRect = new Rectangle((int)(x + q.X0),
-												(int)(y + q.Y0),
-												(int)(q.X1 - q.X0),
-												(int)(q.Y1 - q.Y0));
+					var destRect = new RectangleF((x + q.X0),
+												(y + q.Y0),
+												(q.X1 - q.X0),
+												(q.Y1 - q.Y0));
 
 					var sourceRect = new Rectangle((int)(q.S0 * _size.X),
 												(int)(q.T0 * _size.Y),
 												(int)((q.S1 - q.S0) * _size.X),
 												(int)((q.T1 - q.T0) * _size.Y));
 
+					var pos = new Vector2(x + q.X0, y + q.Y0);
+
+					var scale = destRect.Height / sourceRect.Height;
+
 					batch.Draw(glyph.Atlas.Texture,
-						destRect,
+						pos,
 						sourceRect,
 						color,
 						0f,
 						Vector2.Zero,
+						scale,
 						SpriteEffects.None,
 						depth);
 				}
@@ -274,27 +281,31 @@ namespace FontStashSharp
 				GetQuad(glyph, prevGlyph, Spacing, ref originX, ref originY, ref q);
 				if (!glyph.IsEmpty)
 				{
-					q.X0 = (int)(q.X0 * Scale.X);
-					q.X1 = (int)(q.X1 * Scale.X);
-					q.Y0 = (int)(q.Y0 * Scale.Y);
-					q.Y1 = (int)(q.Y1 * Scale.Y);
+					q.X0 = (q.X0 * Scale.X);
+					q.X1 = (q.X1 * Scale.X);
+					q.Y0 = (q.Y0 * Scale.Y);
+					q.Y1 = (q.Y1 * Scale.Y);
 
-					var destRect = new Rectangle((int)(x + q.X0),
-												(int)(y + q.Y0),
-												(int)(q.X1 - q.X0),
-												(int)(q.Y1 - q.Y0));
+					var destRect = new RectangleF((x + q.X0),
+												(y + q.Y0),
+												(q.X1 - q.X0),
+												(q.Y1 - q.Y0));
 
 					var sourceRect = new Rectangle((int)(q.S0 * _size.X),
 												(int)(q.T0 * _size.Y),
 												(int)((q.S1 - q.S0) * _size.X),
 												(int)((q.T1 - q.T0) * _size.Y));
 
+					var pos2 = new Vector2(x + q.X0, y+q.Y0);
+					var scale = destRect.Height / sourceRect.Height;
+
 					batch.Draw(glyph.Atlas.Texture,
-						destRect,
+						pos2,
 						sourceRect,
 						glyphColors[pos],
 						0f,
 						Vector2.Zero,
+						scale,
 						SpriteEffects.None,
 						depth);
 				}
@@ -365,27 +376,33 @@ namespace FontStashSharp
 				GetQuad(glyph, prevGlyph, Spacing, ref originX, ref originY, ref q);
 				if (!glyph.IsEmpty)
 				{
-					q.X0 = (int)(q.X0 * Scale.X);
-					q.X1 = (int)(q.X1 * Scale.X);
-					q.Y0 = (int)(q.Y0 * Scale.Y);
-					q.Y1 = (int)(q.Y1 * Scale.Y);
+					q.X0 = (q.X0 * Scale.X);
+					q.X1 = (q.X1 * Scale.X);
+					q.Y0 = (q.Y0 * Scale.Y);
+					q.Y1 = (q.Y1 * Scale.Y);
 
-					var destRect = new Rectangle((int)(x + q.X0),
-												(int)(y + q.Y0),
-												(int)(q.X1 - q.X0),
-												(int)(q.Y1 - q.Y0));
+					var destRect = new RectangleF((x + q.X0),
+												(y + q.Y0),
+												(q.X1 - q.X0),
+												(q.Y1 - q.Y0));
 
 					var sourceRect = new Rectangle((int)(q.S0 * _size.X),
 												(int)(q.T0 * _size.Y),
 												(int)((q.S1 - q.S0) * _size.X),
 												(int)((q.T1 - q.T0) * _size.Y));
 
+					var pos = new Vector2(x + q.X0, y + q.Y0);
+					var rotation = 0.0f;
+					var origin = Vector2.Zero;
+					var scale = destRect.Height / sourceRect.Height;
+
 					batch.Draw(glyph.Atlas.Texture,
-						destRect,
+						pos,
 						sourceRect,
 						color,
 						0f,
 						Vector2.Zero,
+						scale,
 						SpriteEffects.None,
 						depth);
 				}
@@ -435,27 +452,31 @@ namespace FontStashSharp
 				GetQuad(glyph, prevGlyph, Spacing, ref originX, ref originY, ref q);
 				if (!glyph.IsEmpty)
 				{
-					q.X0 = (int)(q.X0 * Scale.X);
-					q.X1 = (int)(q.X1 * Scale.X);
-					q.Y0 = (int)(q.Y0 * Scale.Y);
-					q.Y1 = (int)(q.Y1 * Scale.Y);
+					q.X0 = (q.X0 * Scale.X);
+					q.X1 = (q.X1 * Scale.X);
+					q.Y0 = (q.Y0 * Scale.Y);
+					q.Y1 = (q.Y1 * Scale.Y);
 
-					var destRect = new Rectangle((int)(x + q.X0),
-												(int)(y + q.Y0),
-												(int)(q.X1 - q.X0),
-												(int)(q.Y1 - q.Y0));
+					var destRect = new RectangleF((x + q.X0),
+												(y + q.Y0),
+												(q.X1 - q.X0),
+												(q.Y1 - q.Y0));
 
 					var sourceRect = new Rectangle((int)(q.S0 * _size.X),
 												(int)(q.T0 * _size.Y),
 												(int)((q.S1 - q.S0) * _size.X),
 												(int)((q.T1 - q.T0) * _size.Y));
+					
+					var posa = new Vector2(x + q.X0, y + q.Y0);
+					var scale = destRect.Height / sourceRect.Height;
 
 					batch.Draw(glyph.Atlas.Texture,
-						destRect,
+						posa,
 						sourceRect,
 						glyphColors[pos],
 						0f,
 						Vector2.Zero,
+						scale,
 						SpriteEffects.None,
 						depth);
 				}
@@ -484,6 +505,7 @@ namespace FontStashSharp
 			float startx = x;
 
 			FontGlyph prevGlyph = null;
+			var end = x;
 
 			for (int i = 0; i < str.Length; i += char.IsSurrogatePair(str, i) ? 2 : 1)
 			{
@@ -504,10 +526,12 @@ namespace FontStashSharp
 				}
 
 				GetQuad(glyph, prevGlyph, Spacing, ref x, ref y, ref q);
+
+				end = x + glyph.XAdvance * glyph.Font.Scale;
 				if (q.X0 < minx)
 					minx = q.X0;
-				if (x > maxx)
-					maxx = x;
+				if (end > maxx)
+					maxx = end;
 				if (q.Y0 < miny)
 					miny = q.Y0;
 				if (q.Y1 > maxy)
@@ -518,7 +542,7 @@ namespace FontStashSharp
 
 			maxx += StrokeAmount * 2;
 
-			float advance = x - startx;
+			float advance = end - startx;
 			bounds.X = minx;
 			bounds.Y = miny;
 			bounds.X2 = maxx;
@@ -530,7 +554,7 @@ namespace FontStashSharp
 		public float TextBounds(float x, float y, StringBuilder str, ref Bounds bounds)
 		{
 			if (str == null || str.Length == 0) return 0.0f;
-
+			
 			GlyphCollection glyphs;
 			float ascent, lineHeight;
 			PreDraw(str, out glyphs, out ascent, out lineHeight);
@@ -544,6 +568,7 @@ namespace FontStashSharp
 			float startx = x;
 
 			FontGlyph prevGlyph = null;
+			var end = x;
 
 			for (int i = 0; i < str.Length; i += StringBuilderIsSurrogatePair(str, i) ? 2 : 1)
 			{
@@ -564,10 +589,13 @@ namespace FontStashSharp
 				}
 
 				GetQuad(glyph, prevGlyph, Spacing, ref x, ref y, ref q);
+
+				end = x + glyph.XAdvance * glyph.Font.Scale;
+
 				if (q.X0 < minx)
 					minx = q.X0;
-				if (x > maxx)
-					maxx = x;
+				if (end > maxx)
+					maxx = end;
 				if (q.Y0 < miny)
 					miny = q.Y0;
 				if (q.Y1 > maxy)
@@ -578,7 +606,7 @@ namespace FontStashSharp
 
 			maxx += StrokeAmount * 2;
 
-			float advance = x - startx;
+			float advance = end - startx;
 			bounds.X = minx;
 			bounds.Y = miny;
 			bounds.X2 = maxx;
@@ -816,8 +844,8 @@ namespace FontStashSharp
 				Size = FontSize,
 				Index = g,
 				Bounds = new Rectangle(0, 0, gw, gh),
-				XAdvance = (int)(font.Scale * advance * 10.0f),
-				XOffset = x0 - offset,
+				XAdvance = advance,
+				XOffset = x0 - offset, //blur, interesting
 				YOffset = y0 - offset
 			};
 
@@ -884,10 +912,10 @@ namespace FontStashSharp
 				float adv = 0;
 				if (UseKernings && glyph.Font == prevGlyph.Font)
 				{
-					adv = prevGlyph.Font.GetGlyphKernAdvance(prevGlyph.Index, glyph.Index) * glyph.Font.Scale;
+					adv = prevGlyph.Font.GetGlyphKernAdvance(prevGlyph.Index, glyph.Index);
 				}
 
-				x += (int)(adv + spacing + 0.5f);
+				x += prevGlyph.XAdvance * prevGlyph.Font.Scale + adv * prevGlyph.Font.Scale;
 			}
 
 			float rx = x + glyph.XOffset;
@@ -901,7 +929,7 @@ namespace FontStashSharp
 			q.S1 = glyph.Bounds.Right * _itw;
 			q.T1 = glyph.Bounds.Bottom * _ith;
 
-			x += (int)(glyph.XAdvance / 10.0f + 0.5f);
+			//x += glyph.XAdvance * glyph.Font.Scale;
 		}
 	}
 }

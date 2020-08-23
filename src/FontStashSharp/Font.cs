@@ -61,12 +61,37 @@ namespace FontStashSharp
 			advance = advanceTemp;
 			lsb = lsbTemp;
 
-			int x0Temp, y0Temp, x1Temp, y1Temp;
-			stbtt_GetGlyphBitmapBox(_font, glyph, scale, scale, &x0Temp, &y0Temp, &x1Temp, &y1Temp);
-			x0 = x0Temp;
-			y0 = y0Temp;
-			x1 = x1Temp;
-			y1 = y1Temp;
+			/* TODO I see, subpixel shifts make cashing to bitmap trickier, because a letter will appear different across each subpixel shift to a slight degree?
+			 fread(buffer, 1, 1000000, fopen("c:/windows/fonts/arialbd.ttf", "rb"));
+   stbtt_InitFont(&font, buffer, 0);
+
+   scale = stbtt_ScaleForPixelHeight(&font, 15);
+   stbtt_GetFontVMetrics(&font, &ascent,0,0);
+   baseline = (int) (ascent*scale);
+
+   while (text[ch]) {
+      int advance,lsb,x0,y0,x1,y1;
+      float x_shift = xpos - (float) floor(xpos);
+      stbtt_GetCodepointHMetrics(&font, text[ch], &advance, &lsb);
+      stbtt_GetCodepointBitmapBoxSubpixel(&font, text[ch], scale,scale,x_shift,0, &x0,&y0,&x1,&y1);
+      stbtt_MakeCodepointBitmapSubpixel(&font, &screen[baseline + y0][(int) xpos + x0], x1-x0,y1-y0, 79, scale,scale,x_shift,0, text[ch]);
+      // note that this stomps the old data, so where character boxes overlap (e.g. 'lj') it's wrong
+      // because this API is really for baking character bitmaps into textures. if you want to render
+      // a sequence of characters, you really need to render each bitmap to a temp buffer, then
+      // "alpha blend" that into the working buffer
+      xpos += (advance * scale);
+      if (text[ch+1])
+         xpos += scale*stbtt_GetCodepointKernAdvance(&font, text[ch],text[ch+1]);
+      ++ch;
+   } */
+
+			float x0Temp, y0Temp; //to later allow shifting?
+			int x1Temp, y1Temp, x2Temp, y2Temp;
+			stbtt_GetGlyphBitmapBoxSubpixel(_font, glyph, scale, scale, 0, 0, &x1Temp, &y1Temp, &x2Temp, &y2Temp);
+			x0 = x1Temp;
+			y0 = y1Temp;
+			x1 = x2Temp;
+			y1 = y2Temp;
 		}
 
 		public void RenderGlyphBitmap(byte *output, int outWidth, int outHeight, int outStride, int glyph)
