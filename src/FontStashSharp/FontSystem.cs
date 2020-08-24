@@ -232,6 +232,9 @@ namespace FontStashSharp
 			double ascent, lineHeight;
 			PreDraw(str, out glyphs, out ascent, out lineHeight);
 
+			x = Math.Round(x);
+			y = Math.Round(y);
+
 			double originX = 0.0;
 			double originY = 0.0;
 
@@ -265,10 +268,10 @@ namespace FontStashSharp
 					q.Y0 = (q.Y0 * Scale.Y);
 					q.Y1 = (q.Y1 * Scale.Y);
 
-					var destRect = new Rectangle((int)(x + q.X0),
-												(int)(y + q.Y0),
-												(int)(q.X1 - q.X0),
-												(int)(q.Y1 - q.Y0));
+					var destRect = new Rectangle((int)Math.Round(x + q.X0),
+												(int)Math.Round(y + q.Y0),
+												(int)Math.Round(q.X1 - q.X0),
+												(int)Math.Round(q.Y1 - q.Y0));
 
 					var sourceRect = new Rectangle((int)(q.S0 * _size.X),
 												(int)(q.T0 * _size.Y),
@@ -291,13 +294,16 @@ namespace FontStashSharp
 			return x;
 		}
 
-		public float DrawText(SpriteBatch batch, float x, float y, string str, Color[] glyphColors, float depth)
+		public double DrawText(SpriteBatch batch, double x, double y, string str, Color[] glyphColors, float depth)
 		{
 			if (string.IsNullOrEmpty(str)) return 0.0f;
 
 			GlyphCollection glyphs;
 			double ascent, lineHeight;
 			PreDraw(str, out glyphs, out ascent, out lineHeight);
+
+			x = Math.Round(x);
+			y = Math.Round(y);
 
 			var originX = 0.0;
 			var originY = 0.0;
@@ -335,10 +341,10 @@ namespace FontStashSharp
 					q.Y0 = (q.Y0 * Scale.Y);
 					q.Y1 = (q.Y1 * Scale.Y);
 
-					var destRect = new Rectangle((int)(x + q.X0),
-												(int)(y + q.Y0),
-												(int)(q.X1 - q.X0),
-												(int)(q.Y1 - q.Y0));
+					var destRect = new Rectangle((int)Math.Round(x + q.X0),
+												(int)Math.Round(y + q.Y0),
+												(int)Math.Round(q.X1 - q.X0),
+												(int)Math.Round(q.Y1 - q.Y0));
 
 					var sourceRect = new Rectangle((int)(q.S0 * _size.X),
 												(int)(q.T0 * _size.Y),
@@ -385,13 +391,16 @@ namespace FontStashSharp
 			}
 		}
 
-		public float DrawText(SpriteBatch batch, float x, float y, StringBuilder str, Color color, float depth)
+		public double DrawText(SpriteBatch batch, double x, double y, StringBuilder str, Color color, float depth)
 		{
 			if (str == null || str.Length == 0) return 0.0f;
 
 			GlyphCollection glyphs;
 			double ascent, lineHeight;
 			PreDraw(str, out glyphs, out ascent, out lineHeight);
+
+			x = Math.Round(x);
+			y = Math.Round(y);
 
 			var originX = 0.0;
 			var originY = 0.0;
@@ -452,13 +461,16 @@ namespace FontStashSharp
 			return x;
 		}
 
-		public float DrawText(SpriteBatch batch, float x, float y, StringBuilder str, Color[] glyphColors, float depth)
+		public double DrawText(SpriteBatch batch, double x, double y, StringBuilder str, Color[] glyphColors, float depth)
 		{
 			if (str == null || str.Length == 0) return 0.0f;
 
 			GlyphCollection glyphs;
 			double ascent, lineHeight;
 			PreDraw(str, out glyphs, out ascent, out lineHeight);
+
+			x = Math.Round(x);
+			y = Math.Round(y);
 
 			var originX = 0.0;
 			var originY = 0.0;
@@ -496,10 +508,10 @@ namespace FontStashSharp
 					q.Y0 = (q.Y0 * Scale.Y);
 					q.Y1 = (q.Y1 * Scale.Y);
 
-					var destRect = new Rectangle((int)(x + q.X0),
-												(int)(y + q.Y0),
-												(int)(q.X1 - q.X0),
-												(int)(q.Y1 - q.Y0));
+					var destRect = new Rectangle((int)Math.Round(x + q.X0),
+												(int)Math.Round(y + q.Y0),
+												(int)Math.Round(q.X1 - q.X0),
+												(int)Math.Round(q.Y1 - q.Y0));
 
 					var sourceRect = new Rectangle((int)(q.S0 * _size.X),
 												(int)(q.T0 * _size.Y),
@@ -526,6 +538,9 @@ namespace FontStashSharp
 		public double TextBounds(double x, double y, string str, ref Bounds bounds)
 		{
 			if (string.IsNullOrEmpty(str)) return 0.0f;
+
+			x = Math.Round(x);
+			y = Math.Round(y);
 
 			GlyphCollection glyphs;
 			double ascent, lineHeight;
@@ -589,7 +604,10 @@ namespace FontStashSharp
 		public double TextBounds(double x, double y, StringBuilder str, ref Bounds bounds)
 		{
 			if (str == null || str.Length == 0) return 0.0f;
-			
+
+			x = Math.Round(x);
+			y = Math.Round(y);
+
 			GlyphCollection glyphs;
 			double ascent, lineHeight;
 			PreDraw(str, out glyphs, out ascent, out lineHeight);
@@ -654,6 +672,9 @@ namespace FontStashSharp
 			List<Rectangle> Rects = new List<Rectangle>();
 			if (string.IsNullOrEmpty(str)) return Rects;
 
+			x = Math.Round(x);
+			y = Math.Round(y);
+
 			GlyphCollection glyphs;
 			double ascent, lineHeight;
 			PreDraw(str, out glyphs, out ascent, out lineHeight);
@@ -710,6 +731,9 @@ namespace FontStashSharp
 			List<Rectangle> Rects = new List<Rectangle>();
 			if (string.IsNullOrEmpty(str)) return Rects;
 
+			x = Math.Round(x);
+			y = Math.Round(y);
+
 			GlyphCollection glyphs;
 			double ascent, lineHeight;
 			PreDraw(str, out glyphs, out ascent, out lineHeight);
@@ -755,6 +779,9 @@ namespace FontStashSharp
 		{
 			List<Rectangle> Rects = new List<Rectangle>();
 			if (str == null || str.Length == 0) return Rects;
+
+			x = Math.Round(x);
+			y = Math.Round(y);
 
 			GlyphCollection glyphs;
 			double ascent, lineHeight;

@@ -106,12 +106,12 @@ namespace SpriteFontPlus
 			return result;
 		}
 
-		public float DrawString(SpriteBatch batch, string text, Vector2 pos, Color[] glyphColors)
+		public double DrawString(SpriteBatch batch, string text, Vector2 pos, Color[] glyphColors)
 		{
 			return DrawString(batch, text, pos, glyphColors, Vector2.One);
 		}
 
-		public float DrawString(SpriteBatch batch, string text, Vector2 pos, Color[] glyphColors, Vector2 scale, float depth = 0f)
+		public double DrawString(SpriteBatch batch, string text, Vector2 pos, Color[] glyphColors, Vector2 scale, float depth = 0f)
 		{
 			_fontSystem.Scale = scale;
 
@@ -122,12 +122,12 @@ namespace SpriteFontPlus
 			return result;
 		}
 
-		public float DrawString(SpriteBatch batch, StringBuilder text, Vector2 pos, Color color)
+		public double DrawString(SpriteBatch batch, StringBuilder text, Vector2 pos, Color color)
 		{
 			return DrawString(batch, text, pos, color, Vector2.One);
 		}
 
-		public float DrawString(SpriteBatch batch, StringBuilder text, Vector2 pos, Color color, Vector2 scale, float depth = 0f)
+		public double DrawString(SpriteBatch batch, StringBuilder text, Vector2 pos, Color color, Vector2 scale, float depth = 0f)
 		{
 			_fontSystem.Scale = scale;
 
@@ -138,7 +138,7 @@ namespace SpriteFontPlus
 			return result;
 		}
 
-		public float DrawString(SpriteBatch batch, StringBuilder text, Vector2 pos, Color[] glyphColors)
+		public double DrawString(SpriteBatch batch, StringBuilder text, Vector2 pos, Color[] glyphColors)
 		{
 			return DrawString(batch, text, pos, glyphColors, Vector2.One);
 		}
@@ -158,7 +158,7 @@ namespace SpriteFontPlus
 			return _fontSystem.GetLineHeightBasic();
 		}
 
-		public float DrawString(SpriteBatch batch, StringBuilder text, Vector2 pos, Color[] glyphColors, Vector2 scale, float depth = 0f)
+		public double DrawString(SpriteBatch batch, StringBuilder text, Vector2 pos, Color[] glyphColors, Vector2 scale, float depth = 0f)
 		{
 			_fontSystem.Scale = scale;
 
