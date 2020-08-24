@@ -90,12 +90,12 @@ namespace SpriteFontPlus
 			_fontSystem?.Dispose();
 		}
 
-		public float DrawString(SpriteBatch batch, string text, Vector2 pos, Color color)
+		public double DrawString(SpriteBatch batch, string text, Vector2 pos, Color color)
 		{
 			return DrawString(batch, text, pos, color, Vector2.One);
 		}
 
-		public float DrawString(SpriteBatch batch, string text, Vector2 pos, Color color, Vector2 scale, float depth = 0f)
+		public double DrawString(SpriteBatch batch, string text, Vector2 pos, Color color, Vector2 scale, float depth = 0f)
 		{
 			_fontSystem.Scale = scale;
 
@@ -184,7 +184,7 @@ namespace SpriteFontPlus
 			Bounds bounds = new Bounds();
 			_fontSystem.TextBounds(0, 0, text, ref bounds);
 
-			return new Vector2(bounds.X2, bounds.Y2);
+			return new Vector2((float)bounds.X2, (float)bounds.Y2);
 		}
 
 		public Vector2 MeasureString(StringBuilder text)
@@ -192,7 +192,7 @@ namespace SpriteFontPlus
 			Bounds bounds = new Bounds();
 			_fontSystem.TextBounds(0, 0, text, ref bounds);
 
-			return new Vector2(bounds.X2, bounds.Y2);
+			return new Vector2((float)bounds.X2, (float)bounds.Y2);
 		}
 
 		public Rectangle GetTextBounds(Vector2 position, string text)
