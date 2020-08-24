@@ -10,7 +10,7 @@ namespace FontStashSharp
 		public int Index;
 		public int Size;
 		public Rectangle Bounds;
-		public float XAdvance;
+		public int XAdvance;
 		public int XOffset;
 		public int YOffset;
 

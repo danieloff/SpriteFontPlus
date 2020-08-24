@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using static StbTrueTypeSharp.StbTrueType;
 
@@ -10,10 +10,10 @@ namespace FontStashSharp
 		private float AscentBase, DescentBase, LineHeightBase;
 		readonly Int32Map<int> _kernings = new Int32Map<int>();
 
-		public float Ascent { get; private set; }
-		public float Descent { get; private set; }
-		public float LineHeight { get; private set; }
-		public float Scale { get; private set; }
+		public double Ascent { get; private set; }
+		public double Descent { get; private set; }
+		public double LineHeight { get; private set; }
+		public double Scale { get; private set; }
 
 		public stbtt_fontinfo _font = new stbtt_fontinfo();
 
@@ -54,7 +54,7 @@ namespace FontStashSharp
 			return stbtt_FindGlyphIndex(_font, codepoint);
 		}
 
-		public void BuildGlyphBitmap(int glyph, float scale, ref int advance, ref int lsb, ref int x0, ref int y0, ref int x1, ref int y1)
+		public void BuildGlyphBitmap(int glyph, double scale, ref int advance, ref int lsb, ref int x0, ref int y0, ref int x1, ref int y1)
 		{
 			int advanceTemp, lsbTemp;
 			stbtt_GetGlyphHMetrics(_font, glyph, &advanceTemp, &lsbTemp);
@@ -87,7 +87,8 @@ namespace FontStashSharp
 
 			float x0Temp, y0Temp; //to later allow shifting?
 			int x1Temp, y1Temp, x2Temp, y2Temp;
-			stbtt_GetGlyphBitmapBoxSubpixel(_font, glyph, scale, scale, 0, 0, &x1Temp, &y1Temp, &x2Temp, &y2Temp);
+			var tempscale = (float)scale;
+			stbtt_GetGlyphBitmapBoxSubpixel(_font, glyph, tempscale, tempscale, 0, 0, &x1Temp, &y1Temp, &x2Temp, &y2Temp);
 			x0 = x1Temp;
 			y0 = y1Temp;
 			x1 = x2Temp;
@@ -96,19 +97,20 @@ namespace FontStashSharp
 
 		public void RenderGlyphBitmap(byte *output, int outWidth, int outHeight, int outStride, int glyph)
 		{
-			stbtt_MakeGlyphBitmap(_font, output, outWidth, outHeight, outStride, Scale, Scale, glyph);
+			float scale = (float)Scale; //thinking...
+			stbtt_MakeGlyphBitmap(_font, output, outWidth, outHeight, outStride, scale, scale, glyph);
 		}
 
 		public int GetGlyphKernAdvance(int glyph1, int glyph2)
 		{
-			var key = ((glyph1 << 16) | (glyph1 >> 16)) ^ glyph2;
+			/*var key = ((glyph1 << 16) | (glyph1 >> 16)) ^ glyph2;
 			int result;
 			if (_kernings.TryGetValue(key, out result))
 			{
 				return result;
-			}
-			result = stbtt_GetGlyphKernAdvance(_font, glyph1, glyph2);
-			_kernings[key] = result;
+			}*/
+			int result = stbtt_GetGlyphKernAdvance(_font, glyph1, glyph2);
+			//_kernings[key] = result;
 			return result;
 		}
 
