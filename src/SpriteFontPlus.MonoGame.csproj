@@ -32,6 +32,8 @@
 
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.Portable" Version="3.7.1.189" />
+    <PackageReference Include="SkiaSharp" Version="2.80.2" />
+    <PackageReference Include="SkiaSharp.HarfBuzz" Version="2.80.2" />
   </ItemGroup>
 
   <ItemGroup>

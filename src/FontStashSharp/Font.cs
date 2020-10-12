@@ -15,6 +15,17 @@ namespace FontStashSharp
 		public double LineHeight { get; private set; }
 		public double Scale { get; private set; }
 
+		private double _sizeratio = 1.0;
+		public double Ratio { get
+			{
+				return _sizeratio;
+			}
+			set
+            {
+				_sizeratio = value;
+            } 
+		}
+
 		public stbtt_fontinfo _font = new stbtt_fontinfo();
 
 		public Font(byte[] data)
@@ -43,10 +54,10 @@ namespace FontStashSharp
 
 		public void Recalculate(float size)
 		{
-			Ascent = AscentBase * size;
-			Descent = DescentBase * size;
-			LineHeight = LineHeightBase * size;
-			Scale = stbtt_ScaleForPixelHeight(_font, size);
+			Ascent = AscentBase * size * _sizeratio;
+			Descent = DescentBase * size * _sizeratio;
+			LineHeight = LineHeightBase * size * _sizeratio;
+			Scale = stbtt_ScaleForPixelHeight(_font, (float)(size * _sizeratio));
 		}
 
 		public int GetGlyphIndex(int codepoint)

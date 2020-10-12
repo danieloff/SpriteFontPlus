@@ -16,11 +16,14 @@ namespace SpriteFontPlus
 			return font.DrawString(batch, text, pos, color, scale);
 		}
 
+		/*
 		public static double DrawString(this SpriteBatch batch, DynamicSpriteFont font, string text, Vector2 pos, Color[] glyphColors)
 		{
 			return font.DrawString(batch, text, pos, glyphColors);
 		}
+		*/
 
+		/*
 		public static double DrawString(this SpriteBatch batch, DynamicSpriteFont font, string text, Vector2 pos, Color[] glyphColors, Vector2 scale)
 		{
 			return font.DrawString(batch, text, pos, glyphColors, scale);
@@ -45,5 +48,6 @@ namespace SpriteFontPlus
 		{
 			return font.DrawString(batch, text, pos, glyphColors, scale);
 		}
+		*/
 	}
 }

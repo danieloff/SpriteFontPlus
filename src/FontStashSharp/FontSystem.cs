@@ -24,6 +24,15 @@ namespace FontStashSharp
 		Point _size;
 		int _fontSize;
 
+		public void SetRatio(int idx, double ratio)
+        {
+			_fonts[idx].Ratio = ratio;
+			foreach (var f in _fonts)
+			{
+				f.Recalculate(_fontSize);
+			}
+		}
+
 		public int FontSize
 		{
 			get { return _fontSize; }
