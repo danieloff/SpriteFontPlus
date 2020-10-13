@@ -16,14 +16,131 @@ namespace SpriteFontPlus
 {
 	static class SpriteFontPlusExtensions
 	{
-		public static double MeasureShapedText(string text, SKPaint paint)
+		public static void DrawShapedText2(this SKCanvas canvas, SKShaper shaper, SKShaper shaper2, string text, float x, float y, SKPaint paint)
 		{
+			if (string.IsNullOrEmpty(text))
+				return;
+
+			if (canvas == null)
+				throw new ArgumentNullException(nameof(canvas));
+			if (shaper == null)
+				throw new ArgumentNullException(nameof(shaper));
 			if (paint == null)
 				throw new ArgumentNullException(nameof(paint));
 
-			double fontsize = paint.TextSize;
+			List<(string, bool)> chunks1 = new List<(string, bool)>();
 
-			using (var blob = paint.Typeface.OpenStream().ToHarfBuzzBlob())
+			int startidx = 0;
+            {
+				var str = text;
+				bool inside = true;
+				for (int i = 0; i < str.Length;)
+				{
+					var codepoint = char.ConvertToUtf32(str, i);
+
+					var glyph = shaper.Typeface.GetGlyph(codepoint);
+					if (glyph == 0 && inside)
+					{
+						if (i - startidx - 1 > 0)
+						{
+							chunks1.Add((str.Substring(startidx, i - startidx - 1), inside));
+						}
+
+						inside = false;
+						startidx = i;
+					}
+					else if(glyph != 0 && !inside)
+                    {
+						if (i - startidx - 1 > 0)
+						{
+							chunks1.Add((str.Substring(startidx, i - startidx - 1), inside));
+						}
+
+						inside = true;
+						startidx = i;
+					}
+
+					i += char.IsSurrogatePair(str, i) ? 2 : 1;
+					
+					if (i == str.Length)
+					{
+						if (i - startidx > 0)
+						{
+							chunks1.Add((str.Substring(startidx, i - startidx), inside));
+						}
+					}
+				}
+			}
+
+			foreach (var chunk in chunks1)
+			{
+
+				using (var font = paint.ToFont())
+				{
+					// shape the text
+					SKShaper.Result result;
+
+					if (chunk.Item2)
+					{
+						result = shaper.Shape(chunk.Item1, x, y, paint);
+						font.Typeface = shaper.Typeface;
+					}
+					else
+					{
+						if (shaper2 != null)
+						{
+							result = shaper2.Shape(chunk.Item1, x, y, paint);
+							font.Typeface = shaper2.Typeface;
+						}
+						else
+						{
+							//this will render boxes of unknown for sure
+							result = shaper.Shape(chunk.Item1, x, y, paint);
+							font.Typeface = shaper.Typeface;
+						}
+					}
+
+
+					// create the text blob
+					using (var builder = new SKTextBlobBuilder())
+					{
+						var run = builder.AllocatePositionedRun(font, result.Codepoints.Length);
+
+						// copy the glyphs
+						var g = run.GetGlyphSpan();
+						var p = run.GetPositionSpan();
+
+						for (var i = 0; i < result.Codepoints.Length; i++)
+						{
+							g[i] = (ushort)result.Codepoints[i];
+							p[i] = result.Points[i];
+						}
+
+						// build
+						using (var textBlob = builder.Build())
+						{
+
+							// draw the text
+							canvas.DrawText(textBlob, 0, 0, paint);
+						}
+					}
+
+
+
+					x += (float)MeasureShapedText(chunk.Item1, font.Size, font.Typeface);
+				}
+
+			}
+		}
+
+		public static double MeasureShapedText(string text, double fontsize, SKTypeface typeface)
+		{
+			//if (paint == null)
+			//	throw new ArgumentNullException(nameof(paint));
+
+			//double fontsize = paint.TextSize;
+
+			using (var blob = typeface.OpenStream().ToHarfBuzzBlob())
 			{
 				using (var hbFace = new Face(blob, 0))
 				{
@@ -78,7 +195,79 @@ namespace SpriteFontPlus
 			}
 			*/
 		}
-	}
+
+		internal static double MeasureShapedText2(string text, float size, SKTypeface typeface, SKTypeface typeface2)
+		{
+			List<(string, bool)> chunks1 = new List<(string, bool)>();
+
+			int startidx = 0;
+			{
+				var str = text;
+				bool inside = true;
+				for (int i = 0; i < str.Length;)
+				{
+					var codepoint = char.ConvertToUtf32(str, i);
+
+					var glyph = typeface.GetGlyph(codepoint);
+					if (glyph == 0 && inside)
+					{
+						if (i - startidx - 1 > 0)
+						{
+							chunks1.Add((str.Substring(startidx, i - startidx - 1), inside));
+						}
+
+						inside = false;
+						startidx = i;
+					}
+					else if (glyph != 0 && !inside)
+					{
+						if (i - startidx - 1 > 0)
+						{
+							chunks1.Add((str.Substring(startidx, i - startidx - 1), inside));
+						}
+
+						inside = true;
+						startidx = i;
+					}
+
+					i += char.IsSurrogatePair(str, i) ? 2 : 1;
+
+					if (i == str.Length)
+					{
+						if (i - startidx > 0)
+						{
+							chunks1.Add((str.Substring(startidx, i - startidx), inside));
+						}
+					}
+				}
+			}
+
+
+			var result = 0.0;
+
+			foreach (var chunk in chunks1)
+			{
+				if (chunk.Item2)
+				{
+					result += MeasureShapedText(chunk.Item1, size, typeface);
+				}
+				else
+				{
+					if (typeface2 != null)
+					{
+						result += MeasureShapedText(chunk.Item1, size, typeface2);
+					}
+					else
+					{
+						//this will render boxes of unknown for sure
+						result += MeasureShapedText(chunk.Item1, size, typeface);
+					}
+				}
+			}
+
+			return result;
+		}
+    }
 
 	class GlyphCollection
 	{
@@ -169,6 +358,10 @@ namespace SpriteFontPlus
 
 			var entry = Fonts[0];
 
+			var shaper = entry.Shaper;
+
+			var shaper2 = Fonts.Count > 1 ? Fonts[1].Shaper : null;
+
 			var paint = new SKPaint();
 
 			paint.Typeface = entry.Typeface;
@@ -177,7 +370,7 @@ namespace SpriteFontPlus
 
 			paint.Color = SKColors.White;
 
-			var dimx = SpriteFontPlusExtensions.MeasureShapedText(text, paint);
+			var dimx = SpriteFontPlusExtensions.MeasureShapedText2(text, entry.Font.Size, entry.Typeface, Fonts.Count > 1 ? Fonts[1].Typeface : null);
 			var dimy = entry.Height;
 
 			if (ScratchDrawing.Width < dimx || ScratchDrawing.Height < dimy)
@@ -187,12 +380,10 @@ namespace SpriteFontPlus
 
 			UpdateScratchTexture(batch);
 
-			var shaper = entry.Shaper;
-
 			using (var canvas = new SKCanvas(ScratchDrawing))
 			{
 				canvas.Clear(SKColors.Transparent);
-				canvas.DrawShapedText(shaper, text, new SKPoint(0, -entry.Font.Metrics.Ascent), paint);
+				canvas.DrawShapedText2(shaper, shaper2, text, 0, -entry.Font.Metrics.Ascent, paint);
 			}
 
 			var spanb = ScratchDrawing.GetPixelSpan();
@@ -292,14 +483,14 @@ namespace SpriteFontPlus
         {
 			var entry = Fonts[0];
 
-			var paint = new SKPaint();
+			//var paint = new SKPaint();
 
-			paint.Typeface = entry.Typeface;
+			//paint.Typeface = entry.Typeface;
 
-			paint.TextSize = entry.Font.Size;
+			//paint.TextSize = entry.Font.Size;
 
-			var dimx = SpriteFontPlusExtensions.MeasureShapedText(text, paint);
-			var dimy = paint.TextSize;
+			var dimx = SpriteFontPlusExtensions.MeasureShapedText2(text, entry.Font.Size, entry.Typeface, Fonts.Count > 1? Fonts[1].Typeface : null);
+			var dimy = entry.Font.Size;
 
 			bounds.X = x;
 			bounds.Y = y;
