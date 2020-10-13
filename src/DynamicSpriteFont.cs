@@ -267,7 +267,16 @@ namespace SpriteFontPlus
 
 			return result;
 		}
-    }
+
+
+		public static string GetHashSHA1(this byte[] data)
+		{
+			using (var sha1 = new System.Security.Cryptography.SHA1CryptoServiceProvider())
+			{
+				return string.Concat(sha1.ComputeHash(data).Select(x => x.ToString("X2")));
+			}
+		}
+	}
 
 	class GlyphCollection
 	{
@@ -322,9 +331,11 @@ namespace SpriteFontPlus
         }
     }
 
-    public class FontSystemSk
-    {
-		public List<FontSk> Fonts = new List<FontSk>();
+	public class FontSystemSk
+	{
+		public static Dictionary<string, FontSk> SysFonts = new Dictionary<string, FontSk>();
+
+		public List<string> Fonts = new List<string>();
 
 		public readonly int BlurAmount;
 		public readonly int StrokeAmount;
@@ -332,45 +343,64 @@ namespace SpriteFontPlus
 		public float LineSpacing = 0f;
 		public Vector2 Scale;
 		public bool UseKernings = true;
+		public float FontSize;
 
-		public SKBitmap ScratchDrawing;
-		public byte[] ScratchImageBuffer;
-		public Texture2D ScratchTexture;
+		public static SKBitmap ScratchDrawing = null;
+		public static byte[] ScratchImageBuffer = null;
+		public static Texture2D ScratchTexture = null;
 
 		public int? DefaultCharacter = ' ';
 
 		public void AddFontMem(byte[] data)
 		{
-			var font = FontSk.FromMemory(data);
+
+			var id = data.GetHashSHA1();
+
+			if (!SysFonts.ContainsKey(id))
+			{
+				var font = FontSk.FromMemory(data);
+
+				SysFonts[id] = font;
+			}
 
 			//font.Recalculate(FontSize);
-			Fonts.Add(font);
+			Fonts.Add(id);
 		}
 
 		public FontSystemSk()
-        {
-			ScratchDrawing = new SKBitmap(1, 1, SKColorType.Rgba8888, SKAlphaType.Unpremul);
+		{
+			if (ScratchDrawing == null)
+			{
+				ScratchDrawing = new SKBitmap(1, 1, SKColorType.Rgba8888, SKAlphaType.Unpremul);
+			}
 		}
+
+		public FontSk GetFont(int val)
+		{
+			return SysFonts[Fonts[val]];
+        }
 
 		internal double DrawText(SpriteBatch batch, float x, float y, string text, Color color, float depth)
 		{
 			//draw using font one until there is a glyph that doesn't exist in font one, then use font 2... etc
 
-			var entry = Fonts[0];
+			var entry = GetFont(0);
 
 			var shaper = entry.Shaper;
 
-			var shaper2 = Fonts.Count > 1 ? Fonts[1].Shaper : null;
+			var entry2 = Fonts.Count > 1 ? GetFont(1) : null;
+
+			var shaper2 = entry2?.Shaper;
 
 			var paint = new SKPaint();
 
 			paint.Typeface = entry.Typeface;
 
-			paint.TextSize = entry.Font.Size;
+			paint.TextSize = FontSize;
 
 			paint.Color = SKColors.White;
 
-			var dimx = SpriteFontPlusExtensions.MeasureShapedText2(text, entry.Font.Size, entry.Typeface, Fonts.Count > 1 ? Fonts[1].Typeface : null);
+			var dimx = SpriteFontPlusExtensions.MeasureShapedText2(text, FontSize, entry.Typeface, entry2?.Typeface);
 			var dimy = entry.Height;
 
 			if (ScratchDrawing.Width < dimx || ScratchDrawing.Height < dimy)
@@ -433,15 +463,16 @@ namespace SpriteFontPlus
 
         internal List<Rectangle> GetGlyphRectsFull(float x, float y, string text)
         {
+			//TODO update this for dual font
 			List<Rectangle> result = new List<Rectangle>();
 
-			var entry = Fonts[0];
+			var entry = GetFont(0);
 
 			var paint = new SKPaint();
 
 			paint.Typeface = entry.Typeface;
 
-			paint.TextSize = entry.Font.Size;
+			paint.TextSize = FontSize;
 
 			double fontsize = paint.TextSize;
 
@@ -481,7 +512,8 @@ namespace SpriteFontPlus
 
         internal void TextBounds(float x, float y, string text, ref Bounds bounds)
         {
-			var entry = Fonts[0];
+			var entry = GetFont(0);
+			var entry1 = Fonts.Count > 1 ? GetFont(1) : null;
 
 			//var paint = new SKPaint();
 
@@ -489,7 +521,7 @@ namespace SpriteFontPlus
 
 			//paint.TextSize = entry.Font.Size;
 
-			var dimx = SpriteFontPlusExtensions.MeasureShapedText2(text, entry.Font.Size, entry.Typeface, Fonts.Count > 1? Fonts[1].Typeface : null);
+			var dimx = SpriteFontPlusExtensions.MeasureShapedText2(text, FontSize, entry.Typeface, entry1?.Typeface);
 			var dimy = entry.Font.Size;
 
 			bounds.X = x;
@@ -516,6 +548,7 @@ namespace SpriteFontPlus
 					continue;
 				}
 
+				glyph.Font.Font.Size = FontSize;
 				var tascent = glyph.Font.Font.Metrics.Ascent;
 				var tlineheight = glyph.Font.Height + LineSpacing;
 
@@ -532,8 +565,9 @@ namespace SpriteFontPlus
 
         private Glyph GetGlyph(int codepoint)
         {
-            foreach (var entry in Fonts)
+            foreach (var entryid in Fonts)
             {
+				var entry = SysFonts[entryid];
 				var g = entry.Typeface.GetGlyph(codepoint);
 				if (g != 0)
                 {
@@ -566,6 +600,7 @@ namespace SpriteFontPlus
 					continue;
 				}
 
+				glyph.Font.Font.Size = FontSize;
 				ascent = glyph.Font.Font.Metrics.Ascent;
 				descent = glyph.Font.Font.Metrics.Descent;
 				lineHeightBasic = glyph.Font.Height; // LineHeight;
@@ -634,8 +669,8 @@ namespace SpriteFontPlus
 		public int Size
 		{
 			//TODO remove int
-			get { return (int)_fontSystem.Fonts[0].Font.Size; }
-			set { _fontSystem.Fonts[0].Font.Size = value; }
+			get { return (int)_fontSystem.FontSize; }
+			set { _fontSystem.FontSize = value; }
 		}
 
 		public float Spacing
@@ -664,7 +699,7 @@ namespace SpriteFontPlus
 
 			_fontSystem.AddFontMem(ttf);
 
-			_fontSystem.Fonts[_fontSystem.Fonts.Count - 1].Font.Size = defaultSize;
+			_fontSystem.FontSize = defaultSize;
 		}
 
 		public void Dispose()
