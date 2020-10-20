@@ -611,6 +611,19 @@ namespace SpriteFontPlus
 			lineHeight = 0;
 			descent = 0;
 			lineHeightBasic = 0;
+
+			if (str == null)
+            {
+				foreach (var entryid in Fonts)
+				{
+					var entry = SysFonts[entryid];
+					entry.Font.Size = FontSize;
+					var lineHeightBasic2 = entry.Font.Metrics.Descent - entry.Font.Metrics.Ascent; //.Height; // LineHeight;
+					lineHeightBasic = Math.Max(lineHeightBasic, lineHeightBasic2);
+				}
+				return;
+			}
+
 			for (int i = 0; i < str.Length; i += char.IsSurrogatePair(str, i) ? 2 : 1)
 			{
 				var codepoint = char.ConvertToUtf32(str, i);
@@ -624,8 +637,8 @@ namespace SpriteFontPlus
 				glyph.Font.Font.Size = FontSize;
 				ascent = glyph.Font.Font.Metrics.Ascent;
 				descent = glyph.Font.Font.Metrics.Descent;
-				lineHeightBasic = glyph.Font.Height; // LineHeight;
-				lineHeight = glyph.Font.Height + LineSpacing;
+				lineHeightBasic = glyph.Font.Font.Metrics.Descent - glyph.Font.Font.Metrics.Ascent; //.Height; // LineHeight;
+				lineHeight = lineHeightBasic + LineSpacing;
 				break;
 			}
 		}
@@ -644,6 +657,13 @@ namespace SpriteFontPlus
 			double ascent, lineHeight, descent, lineHeightBasic;
 			PreDraw2(str, out glyphs, out ascent, out lineHeight, out descent, out lineHeightBasic);
 			return ascent;
+		}
+		internal double GetLineHeightBasic()
+		{
+			GlyphCollection glyphs;
+			double ascent, lineHeight, descent, lineHeightBasic;
+			PreDraw2(null, out glyphs, out ascent, out lineHeight, out descent, out lineHeightBasic);
+			return lineHeightBasic;
 		}
 
 		internal double GetLineHeightBasic(string str)
@@ -797,6 +817,11 @@ namespace SpriteFontPlus
 		public double GetAscent(string str)
 		{
 			return _fontSystem.GetAscent(str);
+		}
+
+		public double GetLineHeightBasic()
+		{
+			return _fontSystem.GetLineHeightBasic();
 		}
 
 		public double GetLineHeightBasic(string str)
