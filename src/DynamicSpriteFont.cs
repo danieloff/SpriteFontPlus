@@ -416,7 +416,8 @@ namespace SpriteFontPlus
 
 			var hbfont2 = entry2?.HBFont;
 
-			_paint.TextSize = FontSize;
+			//points = pixels * 72 / 96
+			_paint.TextSize = FontSize; // (float)(FontSize * 96.0 / 72.0);
 
 			_paintfont.Size = FontSize;
 
@@ -542,8 +543,10 @@ namespace SpriteFontPlus
 
 			//paint.TextSize = entry.Font.Size;
 
+			entry.Font.Size = FontSize;
+
 			var dimx = SpriteFontPlusExtensions.MeasureShapedText2(text, FontSize, entry.Typeface, entry1?.Typeface, entry.HBFont, entry1?.HBFont);
-			var dimy = entry.Font.Size;
+			var dimy = FontSize * 96.0 / 72.0; //TODO MULTIPLE LINES?... //entry.Font.Metrics.Descent - entry.Font.Metrics.Ascent; //TODO measure font two, if needed...
 
 			bounds.X = x;
 			bounds.Y = y;
@@ -620,6 +623,7 @@ namespace SpriteFontPlus
 					entry.Font.Size = FontSize;
 					var lineHeightBasic2 = entry.Font.Metrics.Descent - entry.Font.Metrics.Ascent; //.Height; // LineHeight;
 					lineHeightBasic = Math.Max(lineHeightBasic, lineHeightBasic2);
+					lineHeight = lineHeightBasic + LineSpacing;
 				}
 				return;
 			}
@@ -649,6 +653,14 @@ namespace SpriteFontPlus
 			double ascent, lineHeight, descent, lineHeightBasic;
 			PreDraw2(str, out glyphs, out ascent, out lineHeight, out descent, out lineHeightBasic);
 			return descent;
+		}
+
+		internal double GetFullHeight()
+		{
+			GlyphCollection glyphs;
+			double ascent, lineHeight, descent, lineHeightBasic;
+			PreDraw2(null, out glyphs, out ascent, out lineHeight, out descent, out lineHeightBasic);
+			return lineHeight;
 		}
 
 		internal double GetAscent(string str)
@@ -707,11 +719,16 @@ namespace SpriteFontPlus
 		//	get { return new TextureEnumerator(_fontSystem); }
 		//}
 
-		public int Size
+		public float Size
 		{
 			//TODO remove int
-			get { return (int)_fontSystem.FontSize; }
+			get { return _fontSystem.FontSize; }
 			set { _fontSystem.FontSize = value; }
+		}
+
+		public float PixelSize
+		{ 
+			get { return (float) (Size * 96.0 / 72.0); }
 		}
 
 		public float Spacing
@@ -818,6 +835,16 @@ namespace SpriteFontPlus
 		{
 			return _fontSystem.GetAscent(str);
 		}
+
+		public double GetDescent(string str)
+		{
+			return _fontSystem.GetDescent(str);
+		}
+
+		public double GetFullHeight()
+        {
+			return _fontSystem.GetFullHeight();
+        }
 
 		public double GetLineHeightBasic()
 		{
