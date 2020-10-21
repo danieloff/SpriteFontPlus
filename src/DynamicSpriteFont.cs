@@ -442,7 +442,7 @@ namespace SpriteFontPlus
 			using (var canvas = new SKCanvas(ScratchDrawing))
 			{
 				canvas.Clear(SKColors.Transparent);
-				canvas.DrawShapedText2(shaper, shaper2, text, 0, -entry.Font.Metrics.Ascent, _paint, _paintfont, hbfont, hbfont2);
+				canvas.DrawShapedText2(shaper, shaper2, text, 0, (float) (entry.Height - entry.Font.Metrics.Bottom), _paint, _paintfont, hbfont, hbfont2);
 			}
 
 			var spanb = ScratchDrawing.GetPixelSpan();
@@ -451,8 +451,12 @@ namespace SpriteFontPlus
 
 				ScratchTexture.SetData(ScratchImageBuffer);
 
+			//y should be baseline
+
+			//baseline in source is drawn at entry.Font.Metrics.Bottom instead of entry.Font.Metrics.Descent
+
 			var destRect = new Rectangle((int)Math.Round(x),
-											(int)Math.Round(y),
+											(int)Math.Round(y - entry.Font.Metrics.Descent + entry.Font.Metrics.Bottom),
 											(int)Math.Round(dimx),
 											(int)Math.Round(dimy));
 
@@ -552,13 +556,17 @@ namespace SpriteFontPlus
 
 			entry.Font.Size = FontSize;
 
+
+			var visiblebottom = Math.Max(Math.Max(0, entry.Font.Metrics.Descent), 0); //, entry1 == null ? 0 : entry1.Font.Metrics.Bottom);
+			var visibletop = Math.Min(Math.Min(0, entry.Font.Metrics.Ascent), 0); //, entry1 == null ? 0 : entry1.Font.Metrics.Top);
+
 			var dimx = SpriteFontPlusExtensions.MeasureShapedText2(text, FontSize, entry.Typeface, entry1?.Typeface, entry.HBFont, entry1?.HBFont);
-			var dimy = FontSize * 96.0 / 72.0; //TODO MULTIPLE LINES?... //entry.Font.Metrics.Descent - entry.Font.Metrics.Ascent; //TODO measure font two, if needed...
+			//var dimy = visibleheight;//FontSize * 96.0 / 72.0; //TODO MULTIPLE LINES?... //entry.Font.Metrics.Descent - entry.Font.Metrics.Ascent; //TODO measure font two, if needed...
 
 			bounds.X = x;
-			bounds.Y = y;
+			bounds.Y = y + visibletop;
 			bounds.X2 = x + dimx;
-			bounds.Y2 = y + dimy;
+			bounds.Y2 = y + visiblebottom;
 		}
 
 		private void PreDraw(string str, out double ascent, out double lineHeight)
@@ -612,7 +620,7 @@ namespace SpriteFontPlus
 			return null;
         }
 
-        private void PreDraw2(string str, out GlyphCollection glyphcollection, out double ascent, out double lineHeight, out double descent, out double lineHeightBasic)
+		private void PreDraw2(string str, out GlyphCollection glyphcollection, out double ascent, out double lineHeight, out double descent, out double lineHeightBasic)
 		{
 			glyphcollection = new GlyphCollection();
 
@@ -628,9 +636,9 @@ namespace SpriteFontPlus
 				{
 					var entry = SysFonts[entryid];
 					entry.Font.Size = FontSize;
-					var lineHeightBasic2 = entry.Font.Metrics.Descent - entry.Font.Metrics.Ascent; //.Height; // LineHeight;
+					var lineHeightBasic2 = entry.Font.Metrics.Descent - entry.Font.Metrics.Ascent;
 					lineHeightBasic = Math.Max(lineHeightBasic, lineHeightBasic2);
-					lineHeight = lineHeightBasic + LineSpacing;
+					lineHeight = Math.Max(entry.Height + LineSpacing, lineHeight); // lineHeightBasic + LineSpacing;
 				}
 				return;
 			}
@@ -648,8 +656,11 @@ namespace SpriteFontPlus
 				glyph.Font.Font.Size = FontSize;
 				ascent = glyph.Font.Font.Metrics.Ascent;
 				descent = glyph.Font.Font.Metrics.Descent;
-				lineHeightBasic = glyph.Font.Font.Metrics.Descent - glyph.Font.Font.Metrics.Ascent; //.Height; // LineHeight;
+				lineHeightBasic = glyph.Font.Height; // LineHeight;
 				lineHeight = lineHeightBasic + LineSpacing;
+				var lineHeightBasic2 = glyph.Font.Font.Metrics.Descent - glyph.Font.Font.Metrics.Ascent;
+				lineHeightBasic = Math.Max(lineHeightBasic, lineHeightBasic2);
+				lineHeight = Math.Max(glyph.Font.Height + LineSpacing, lineHeight);
 				break;
 			}
 		}
@@ -669,6 +680,15 @@ namespace SpriteFontPlus
 			PreDraw2(null, out glyphs, out ascent, out lineHeight, out descent, out lineHeightBasic);
 			return lineHeight;
 		}
+
+		/*internal double GetVisibleHeight()
+		{
+			GlyphCollection glyphs;
+			double ascent, lineHeight, descent, lineHeightBasic, visibleheight;
+			visibleheight = 0;
+			PreDraw2(null, out glyphs, out ascent, out lineHeight, out descent, out lineHeightBasic, visibleheight);
+			return lineHeight;
+		}*/
 
 		internal double GetAscent(string str)
 		{
@@ -852,6 +872,10 @@ namespace SpriteFontPlus
         {
 			return _fontSystem.GetFullHeight();
         }
+		/*public double GetVisibleHeight()
+		{
+			return _fontSystem.GetVisibleHeight();
+		}*/
 
 		public double GetLineHeightBasic()
 		{
@@ -889,7 +913,7 @@ namespace SpriteFontPlus
 			Bounds bounds = new Bounds();
 			_fontSystem.TextBounds(0, 0, text, ref bounds);
 
-			return new Vector2((float)bounds.X2, (float)bounds.Y2);
+			return new Vector2((float)(bounds.X2 - bounds.X), (float)(bounds.Y2 - bounds.Y));
 		}
 
 		/*
