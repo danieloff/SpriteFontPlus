@@ -303,7 +303,7 @@ namespace SpriteFontPlus
 
         public double Height { get
 			{
-				return Font.Metrics.Bottom - Font.Metrics.Top;
+				return Font.Size * 96.0 / 72.0;
 			}
 		}
 
@@ -384,11 +384,14 @@ namespace SpriteFontPlus
 		{
 			if (ScratchDrawing == null)
 			{
-				ScratchDrawing = new SKBitmap(1, 1, SKColorType.Rgba8888, SKAlphaType.Unpremul);
+				ScratchDrawing = new SKBitmap(1, 1, SKColorType.Rgba8888, SKAlphaType.Premul);
 			}
 
 			_paint = new SKPaint();
 			_paint.Color = SKColors.White;
+			_paint.IsStroke = false;
+			_paint.IsAntialias = true;
+			_paint.LcdRenderText = true;
 			_paintfont = _paint.ToFont();
 		}
 
@@ -417,7 +420,11 @@ namespace SpriteFontPlus
 			var hbfont2 = entry2?.HBFont;
 
 			//points = pixels * 72 / 96
-			_paint.TextSize = FontSize; // (float)(FontSize * 96.0 / 72.0);
+			_paint.TextSize = FontSize;
+
+			_paint.IsAntialias = true;
+
+			_paint.LcdRenderText = true;
 
 			_paintfont.Size = FontSize;
 
@@ -427,7 +434,7 @@ namespace SpriteFontPlus
 
 			if (ScratchDrawing.Width < dimx || ScratchDrawing.Height < dimy)
 			{
-				ScratchDrawing = new SKBitmap((int)dimx + 50, (int)dimy + 50, SKColorType.Rgba8888, SKAlphaType.Unpremul);
+				ScratchDrawing = new SKBitmap((int)dimx + 50, (int)dimy + 50, SKColorType.Rgba8888, SKAlphaType.Premul);
 			}
 
 			UpdateScratchTexture(batch);
