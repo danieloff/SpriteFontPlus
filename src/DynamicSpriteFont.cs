@@ -604,6 +604,7 @@ namespace SpriteFontPlus
 			bounds.Y2 = y + visiblebottom;
 		}
 
+		/*
 		private void PreDraw(string str, out double ascent, out double lineHeight)
 		{
 			//glyphs = GetGlyphsCollection(FontSize);
@@ -637,6 +638,7 @@ namespace SpriteFontPlus
                 }
 			}
 		}
+		*/
 
         private Glyph GetGlyph(int codepoint)
         {
@@ -667,7 +669,9 @@ namespace SpriteFontPlus
 			lineHeightBasic = 0;
 
 			var topmax = 0.0;
+			var topbasicmax = 0.0;
 			var bottommax = 0.0;
+			var bottombasicmax = 0.0;
 
 			if (str == null)
             {
@@ -676,8 +680,13 @@ namespace SpriteFontPlus
 					var entry = SysFonts[entryid];
 					entry.Font.Size = FontSize;
 					//entry.Font.Size = FontSize * 72.0f / 96.0f;
-					var lineHeightBasic2 = entry.Font.Metrics.Descent - entry.Font.Metrics.Ascent;
-					lineHeightBasic = Math.Max(lineHeightBasic, lineHeightBasic2);
+					//var lineHeightBasic2 = entry.Font.Metrics.Descent - entry.Font.Metrics.Ascent;
+
+
+					topbasicmax = Math.Min(topbasicmax, entry.Font.Metrics.Ascent);
+					bottombasicmax = Math.Max(bottombasicmax, entry.Font.Metrics.Descent);
+					lineHeightBasic = Math.Max(lineHeightBasic, bottombasicmax - topbasicmax);
+
 					topmax = Math.Min(topmax, entry.Font.Metrics.Top);
 					bottommax = Math.Max(bottommax, entry.Font.Metrics.Bottom);
 					lineHeight = Math.Max(lineHeight, bottommax - topmax);//Math.Max(FontSize + LineSpacing, lineHeight); // lineHeightBasic + LineSpacing;
