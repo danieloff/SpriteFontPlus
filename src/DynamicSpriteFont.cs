@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace SpriteFontPlus
@@ -301,11 +302,11 @@ namespace SpriteFontPlus
 		public SKShaper Shaper;
 		public HarfBuzzSharp.Font HBFont;
 
-        public double Height { get
+        /*public double Height { get
 			{
-				return Font.Size * 96.0 / 72.0;
+				return Font.Size;
 			}
-		}
+		}*/
 
         public static FontSk FromMemory(byte[] data)
         {
@@ -358,6 +359,22 @@ namespace SpriteFontPlus
 		public bool UseKernings = true;
 		public float FontSize;
 
+
+
+		OperatingSystem _platform = Environment.OSVersion;
+
+		public float PlatFormFontSize
+		{
+			get
+			{
+				if (_platform.Platform == PlatformID.Unix)
+				{
+					return FontSize * 72.0f / 96.0f;
+				}
+				return FontSize;
+			}
+		}
+
 		public static SKBitmap ScratchDrawing = null;
 		public static byte[] ScratchImageBuffer = null;
 		public static Texture2D ScratchTexture = null;
@@ -403,7 +420,7 @@ namespace SpriteFontPlus
 		SKPaint _paint;
 		SKFont _paintfont;
 
-		internal double DrawText(SpriteBatch batch, float x, float y, string text, Color color, float depth)
+		internal double DrawText(SpriteBatch batch, float x, float y, string text, Color color, float depth, bool bottomleft = false)
 		{
 			//draw using font one until there is a glyph that doesn't exist in font one, then use font 2... etc
 
@@ -419,20 +436,30 @@ namespace SpriteFontPlus
 
 			var hbfont2 = entry2?.HBFont;
 
+
+			entry.Font.Size = FontSize;
+			if (entry2 != null)
+			{
+				entry2.Font.Size = FontSize;
+			}
 			//points = pixels * 72 / 96
 			_paint.TextSize = FontSize;
+			//_paint.TextSize = FontSize * 72.0f / 96.0f;
 
 			_paint.IsAntialias = true;
 
 			_paint.LcdRenderText = true;
 
 			_paintfont.Size = FontSize;
+			//_paintfont.Size = FontSize * 72.0f / 96.0f;
 
 
 			var dimx = SpriteFontPlusExtensions.MeasureShapedText2(text, FontSize, entry.Typeface, entry2?.Typeface, hbfont, hbfont2);
-			var dimy = entry.Height;
+			var dimy = FontSize;
+			var top = Math.Min(entry.Font.Metrics.Top, entry2 == null ? 0 : entry2.Font.Metrics.Top);
+			var bottom = Math.Max(entry.Font.Metrics.Bottom, entry2 == null ? 0 : entry2.Font.Metrics.Bottom);
 
-			if (ScratchDrawing.Width < dimx || ScratchDrawing.Height < dimy)
+			if (ScratchDrawing.Width < dimx || ScratchDrawing.Height < bottom - top)
 			{
 				ScratchDrawing = new SKBitmap((int)dimx + 50, (int)dimy + 50, SKColorType.Rgba8888, SKAlphaType.Premul);
 			}
@@ -442,28 +469,34 @@ namespace SpriteFontPlus
 			using (var canvas = new SKCanvas(ScratchDrawing))
 			{
 				canvas.Clear(SKColors.Transparent);
-				canvas.DrawShapedText2(shaper, shaper2, text, 0, (float) (entry.Height - entry.Font.Metrics.Bottom), _paint, _paintfont, hbfont, hbfont2);
+				canvas.DrawShapedText2(shaper, shaper2, text, 0, -top, _paint, _paintfont, hbfont, hbfont2);
 			}
 
 			var spanb = ScratchDrawing.GetPixelSpan();
 
 			spanb.CopyTo(ScratchImageBuffer);
 
-				ScratchTexture.SetData(ScratchImageBuffer);
+			ScratchTexture.SetData(ScratchImageBuffer);
 
 			//y should be baseline
 
 			//baseline in source is drawn at entry.Font.Metrics.Bottom instead of entry.Font.Metrics.Descent
 
+			var desty = y;
+			if (bottomleft)
+            {
+				desty = y - entry.Font.Metrics.Descent;
+            }
+
 			var destRect = new Rectangle((int)Math.Round(x),
-											(int)Math.Round(y - entry.Font.Metrics.Descent + entry.Font.Metrics.Bottom),
+											(int)Math.Round(desty),
 											(int)Math.Round(dimx),
-											(int)Math.Round(dimy));
+											(int)Math.Round(bottom - top));
 
 			var sourceRect = new Rectangle((int)(0),
 										(int)(0),
 										(int)(dimx),
-										(int)(dimy));
+										(int)(bottom - top));
 
 			batch.Draw(ScratchTexture,
 				destRect,
@@ -506,6 +539,7 @@ namespace SpriteFontPlus
 			paint.Typeface = entry.Typeface;
 
 			paint.TextSize = FontSize;
+			//paint.TextSize = FontSize * 72.0f / 96.0f;
 
 			double fontsize = paint.TextSize;
 
@@ -555,6 +589,7 @@ namespace SpriteFontPlus
 			//paint.TextSize = entry.Font.Size;
 
 			entry.Font.Size = FontSize;
+			//entry.Font.Size = FontSize * 72.0f / 96.0f;
 
 
 			var visiblebottom = Math.Max(Math.Max(0, entry.Font.Metrics.Descent), 0); //, entry1 == null ? 0 : entry1.Font.Metrics.Bottom);
@@ -588,8 +623,9 @@ namespace SpriteFontPlus
 				}
 
 				glyph.Font.Font.Size = FontSize;
+				glyph.Font.Font.Size = FontSize * 72.0f / 96.0f;
 				var tascent = glyph.Font.Font.Metrics.Ascent;
-				var tlineheight = glyph.Font.Height + LineSpacing;
+				var tlineheight = FontSize + LineSpacing;
 
 				if (tascent > ascent)
                 {
@@ -630,15 +666,21 @@ namespace SpriteFontPlus
 			descent = 0;
 			lineHeightBasic = 0;
 
+			var topmax = 0.0;
+			var bottommax = 0.0;
+
 			if (str == null)
             {
 				foreach (var entryid in Fonts)
 				{
 					var entry = SysFonts[entryid];
 					entry.Font.Size = FontSize;
+					//entry.Font.Size = FontSize * 72.0f / 96.0f;
 					var lineHeightBasic2 = entry.Font.Metrics.Descent - entry.Font.Metrics.Ascent;
 					lineHeightBasic = Math.Max(lineHeightBasic, lineHeightBasic2);
-					lineHeight = Math.Max(entry.Height + LineSpacing, lineHeight); // lineHeightBasic + LineSpacing;
+					topmax = Math.Min(topmax, entry.Font.Metrics.Top);
+					bottommax = Math.Max(bottommax, entry.Font.Metrics.Bottom);
+					lineHeight = Math.Max(lineHeight, bottommax - topmax);//Math.Max(FontSize + LineSpacing, lineHeight); // lineHeightBasic + LineSpacing;
 				}
 				return;
 			}
@@ -654,13 +696,14 @@ namespace SpriteFontPlus
 				}
 
 				glyph.Font.Font.Size = FontSize;
+				//glyph.Font.Font.Size = FontSize * 72.0f / 96.0f;
 				ascent = glyph.Font.Font.Metrics.Ascent;
 				descent = glyph.Font.Font.Metrics.Descent;
-				lineHeightBasic = glyph.Font.Height; // LineHeight;
+				lineHeightBasic = FontSize; // LineHeight;
 				lineHeight = lineHeightBasic + LineSpacing;
 				var lineHeightBasic2 = glyph.Font.Font.Metrics.Descent - glyph.Font.Font.Metrics.Ascent;
 				lineHeightBasic = Math.Max(lineHeightBasic, lineHeightBasic2);
-				lineHeight = Math.Max(glyph.Font.Height + LineSpacing, lineHeight);
+				lineHeight = Math.Max(FontSize + LineSpacing, lineHeight);
 				break;
 			}
 		}
@@ -748,15 +791,16 @@ namespace SpriteFontPlus
 
 		public float Size
 		{
-			//TODO remove int
 			get { return _fontSystem.FontSize; }
 			set { _fontSystem.FontSize = value; }
 		}
 
-		public float PixelSize
+		/*
+		public float Size2
 		{ 
-			get { return (float) (Size * 96.0 / 72.0); }
+			get { return (float) (Size * 72.0 / 96.0); }
 		}
+		*/
 
 		public float Spacing
 		{
@@ -778,13 +822,13 @@ namespace SpriteFontPlus
 			set { _fontSystem.DefaultCharacter = value; }
 		}
 
-		DynamicSpriteFont(byte[] ttf, int defaultSize, int textureWidth, int textureHeight, int blur, int stroke)
+		DynamicSpriteFont(byte[] ttf, double defaultSize, int textureWidth, int textureHeight, int blur, int stroke)
 		{
 			_fontSystem = new FontSystemSk();
 
 			_fontSystem.AddFontMem(ttf);
 
-			_fontSystem.FontSize = defaultSize;
+			_fontSystem.FontSize = (float)defaultSize;
 		}
 
 		public void Dispose()
@@ -792,71 +836,21 @@ namespace SpriteFontPlus
 			//_fontSystem?.Dispose();
 		}
 
-		public double DrawString(SpriteBatch batch, string text, Vector2 pos, Color color)
+		public double DrawString(SpriteBatch batch, string text, Vector2 pos, Color color, bool bottomleft = false)
 		{
-			return DrawString(batch, text, pos, color, Vector2.One);
+			return DrawString(batch, text, pos, color, Vector2.One, bottomleft: bottomleft);
 		}
 
-		public double DrawString(SpriteBatch batch, string text, Vector2 pos, Color color, Vector2 scale, float depth = 0f)
+		public double DrawString(SpriteBatch batch, string text, Vector2 pos, Color color, Vector2 scale, float depth = 0f, bool bottomleft = false)
 		{
 			_fontSystem.Scale = scale;
 
-			var result = _fontSystem.DrawText(batch, pos.X, pos.Y, text, color, depth);
+			var result = _fontSystem.DrawText(batch, pos.X, pos.Y, text, color, depth, bottomleft);
 
 			_fontSystem.Scale = Vector2.One;
 
 			return result;
 		}
-
-		/*
-		public double DrawString(SpriteBatch batch, string text, Vector2 pos, Color[] glyphColors)
-		{
-			return DrawString(batch, text, pos, glyphColors, Vector2.One);
-		}
-
-		public double DrawString(SpriteBatch batch, string text, Vector2 pos, Color[] glyphColors, Vector2 scale, float depth = 0f)
-		{
-			_fontSystem.Scale = scale;
-
-			var result = _fontSystem.DrawText(batch, pos.X, pos.Y, text, glyphColors, depth);
-
-			_fontSystem.Scale = Vector2.One;
-
-			return result;
-		}
-		*/
-
-		/*
-		public double DrawString(SpriteBatch batch, StringBuilder text, Vector2 pos, Color color)
-		{
-			return DrawString(batch, text, pos, color, Vector2.One);
-		}
-		*/
-
-		/*
-		public double DrawString(SpriteBatch batch, StringBuilder text, Vector2 pos, Color color, Vector2 scale, float depth = 0f)
-		{
-			_fontSystem.Scale = scale;
-
-			var result = _fontSystem.DrawText(batch, pos.X, pos.Y, text, color, depth);
-
-			_fontSystem.Scale = Vector2.One;
-
-			return result;
-		}
-		*/
-
-		/*
-		public double DrawString(SpriteBatch batch, StringBuilder text, Vector2 pos, Color[] glyphColors)
-		{
-			return DrawString(batch, text, pos, glyphColors, Vector2.One);
-		}
-		*/
-
-        /*public double GetDescent()
-        {
-			return _fontSystem.GetDescent();
-        }*/
 
 		public double GetAscent(string str)
 		{
@@ -872,6 +866,7 @@ namespace SpriteFontPlus
         {
 			return _fontSystem.GetFullHeight();
         }
+
 		/*public double GetVisibleHeight()
 		{
 			return _fontSystem.GetVisibleHeight();
@@ -916,54 +911,16 @@ namespace SpriteFontPlus
 			return new Vector2((float)(bounds.X2 - bounds.X), (float)(bounds.Y2 - bounds.Y));
 		}
 
-		/*
-		public Vector2 MeasureString(StringBuilder text)
-		{
-			Bounds bounds = new Bounds();
-			_fontSystem.TextBounds(0, 0, text, ref bounds);
-
-			return new Vector2((float)bounds.X2, (float)bounds.Y2);
-		}
-		*/
-
-		public Rectangle GetTextBounds(Vector2 position, string text)
-		{
-			Bounds bounds = new Bounds();
-			_fontSystem.TextBounds(position.X, position.Y, text, ref bounds);
-
-			return new Rectangle((int)bounds.X, (int)bounds.Y, (int)(bounds.X2 - bounds.X), (int)(bounds.Y2 - bounds.Y));
-		}
-
-		/*
-		public Rectangle GetTextBounds(Vector2 position, StringBuilder text)
-		{
-			Bounds bounds = new Bounds();
-			_fontSystem.TextBounds(position.X, position.Y, text, ref bounds);
-
-			return new Rectangle((int)bounds.X, (int)bounds.Y, (int)(bounds.X2 - bounds.X), (int)(bounds.Y2 - bounds.Y));
-		}
-		*/
-
 		public List<Rectangle> GetGlyphRectsFull(Vector2 position, string text) {
 			return _fontSystem.GetGlyphRectsFull(position.X, position.Y, text);
 		}
 
-		/*
-		public List<Rectangle> GetGlyphRects(Vector2 position, string text){
-			return _fontSystem.GetGlyphRects(position.X, position.Y, text);
-		}
-
-		public List<Rectangle> GetGlyphRects(Vector2 position, StringBuilder text){
-			return _fontSystem.GetGlyphRects(position.X, position.Y, text);
-		}
-		*/
-
-		public static DynamicSpriteFont FromTtf(byte[] ttf, int defaultSize, int textureWidth = 1024, int textureHeight = 1024, int blur = 0, int stroke = 0)
+		public static DynamicSpriteFont FromTtf(byte[] ttf, double defaultSize, int textureWidth = 1024, int textureHeight = 1024, int blur = 0, int stroke = 0)
 		{
 			return new DynamicSpriteFont(ttf, defaultSize, textureWidth, textureHeight, blur, stroke);
 		}
 
-		public static DynamicSpriteFont FromTtf(Stream ttfStream, int defaultSize, int textureWidth = 1024, int textureHeight = 1024, int blur = 0, int stroke = 0)
+		public static DynamicSpriteFont FromTtf(Stream ttfStream, double defaultSize, int textureWidth = 1024, int textureHeight = 1024, int blur = 0, int stroke = 0)
 		{
 			return FromTtf(ttfStream.ToByteArray(), defaultSize, textureWidth, textureHeight, blur, stroke);
 		}
