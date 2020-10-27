@@ -492,10 +492,10 @@ namespace SpriteFontPlus
 			//baseline in source is drawn at entry.Font.Metrics.Bottom instead of entry.Font.Metrics.Descent
 
 			var desty = y;
-			if (bottomleft)
-            {
-				desty = y - entry.Font.Metrics.Descent;
-            }
+			//if (bottomleft)
+            //{
+			//  desty = y - entry.Font.Metrics.Descent;
+            //}
 
 			var destRect = new Rectangle((int)Math.Round(x),
 											(int)Math.Round(desty),
