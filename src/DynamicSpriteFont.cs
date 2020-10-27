@@ -17,7 +17,7 @@ namespace SpriteFontPlus
 {
 	static class SpriteFontPlusExtensions
 	{
-		public static void DrawShapedText2(this SKCanvas canvas, SKShaper shaper, SKShaper shaper2, string text, float x, float y, SKPaint paint, SKFont paintfont, HarfBuzzSharp.Font hbFont1, HarfBuzzSharp.Font hbFont2)
+		public static void DrawShapedText2(this SKCanvas canvas, SKShaper shaper, SKShaper shaper2, string text, float x, float y, SKPaint paint, SKFont paintfont, HarfBuzzSharp.Font hbFont1, HarfBuzzSharp.Font hbFont2, HarfBuzzSharp.Buffer hbBuffer)
 		{
 			if (string.IsNullOrEmpty(text))
 				return;
@@ -133,13 +133,13 @@ namespace SpriteFontPlus
 
 
 
-					x += (float)MeasureShapedText(chunk.Item1, paintfont.Size, paintfont.Typeface, hbFont);
+					x += (float)MeasureShapedText(chunk.Item1, paintfont.Size, paintfont.Typeface, hbFont, hbBuffer);
 				}
 
 			}
 		}
 
-		public static double MeasureShapedText(string text, double fontsize, SKTypeface typeface, HarfBuzzSharp. Font hbFont)
+		public static double MeasureShapedText(string text, double fontsize, SKTypeface typeface, HarfBuzzSharp. Font hbFont, HarfBuzzSharp.Buffer hbBuffer)
 		{
 			//if (paint == null)
 			//	throw new ArgumentNullException(nameof(paint));
@@ -152,17 +152,18 @@ namespace SpriteFontPlus
 				{
 					//using (var hbFont = new HarfBuzzSharp.Font(hbFace))
                     {
-						using (var buffer = new HarfBuzzSharp.Buffer())
+						//using (var buffer = new HarfBuzzSharp.Buffer())
                         {
-							buffer.AddUtf16(text);
-							buffer.GuessSegmentProperties();
-							hbFont.Shape(buffer);
+							hbBuffer.ClearContents();
+							hbBuffer.AddUtf16(text);
+							hbBuffer.GuessSegmentProperties();
+							hbFont.Shape(hbBuffer);
 							hbFont.GetScale(out var xScale, out _);
 
 							//todo measure multi line y
 
 							var scale = fontsize / xScale;
-							return buffer.GlyphPositions.Sum(x => x.XAdvance) * scale;
+							return hbBuffer.GlyphPositions.Sum(x => x.XAdvance) * scale;
                         }
                     }
 				}
@@ -202,7 +203,7 @@ namespace SpriteFontPlus
 			*/
 		}
 
-		internal static double MeasureShapedText2(string text, float size, SKTypeface typeface, SKTypeface typeface2, HarfBuzzSharp.Font hbFont1, HarfBuzzSharp.Font hbFont2)
+		internal static double MeasureShapedText2(string text, float size, SKTypeface typeface, SKTypeface typeface2, HarfBuzzSharp.Font hbFont1, HarfBuzzSharp.Font hbFont2, HarfBuzzSharp.Buffer hbBuffer)
 		{
 			List<(string, bool)> chunks1 = new List<(string, bool)>();
 
@@ -255,18 +256,18 @@ namespace SpriteFontPlus
 			{
 				if (chunk.Item2)
 				{
-					result += MeasureShapedText(chunk.Item1, size, typeface, hbFont1);
+					result += MeasureShapedText(chunk.Item1, size, typeface, hbFont1, hbBuffer);
 				}
 				else
 				{
 					if (typeface2 != null)
 					{
-						result += MeasureShapedText(chunk.Item1, size, typeface2, hbFont2);
+						result += MeasureShapedText(chunk.Item1, size, typeface2, hbFont2, hbBuffer);
 					}
 					else
 					{
 						//this will render boxes of unknown for sure
-						result += MeasureShapedText(chunk.Item1, size, typeface, hbFont1);
+						result += MeasureShapedText(chunk.Item1, size, typeface, hbFont1, hbBuffer);
 					}
 				}
 			}
@@ -410,6 +411,7 @@ namespace SpriteFontPlus
 			_paint.IsAntialias = true;
 			_paint.LcdRenderText = true;
 			_paintfont = _paint.ToFont();
+			_HBBuffer = new HarfBuzzSharp.Buffer();
 		}
 
 		public FontSk GetFont(int val)
@@ -417,8 +419,14 @@ namespace SpriteFontPlus
 			return SysFonts[Fonts[val]];
         }
 
+		public HarfBuzzSharp.Buffer GetHBBuffer()
+        {
+			return _HBBuffer;
+        }
+
 		SKPaint _paint;
 		SKFont _paintfont;
+		private HarfBuzzSharp.Buffer _HBBuffer;
 
 		internal double DrawText(SpriteBatch batch, float x, float y, string text, Color color, float depth, bool bottomleft = false)
 		{
@@ -436,6 +444,7 @@ namespace SpriteFontPlus
 
 			var hbfont2 = entry2?.HBFont;
 
+			var hbBuffer = GetHBBuffer();
 
 			entry.Font.Size = FontSize;
 			if (entry2 != null)
@@ -454,7 +463,7 @@ namespace SpriteFontPlus
 			//_paintfont.Size = FontSize * 72.0f / 96.0f;
 
 
-			var dimx = SpriteFontPlusExtensions.MeasureShapedText2(text, FontSize, entry.Typeface, entry2?.Typeface, hbfont, hbfont2);
+			var dimx = SpriteFontPlusExtensions.MeasureShapedText2(text, FontSize, entry.Typeface, entry2?.Typeface, hbfont, hbfont2, hbBuffer);
 			var dimy = FontSize;
 			var top = Math.Min(entry.Font.Metrics.Top, entry2 == null ? 0 : entry2.Font.Metrics.Top);
 			var bottom = Math.Max(entry.Font.Metrics.Bottom, entry2 == null ? 0 : entry2.Font.Metrics.Bottom);
@@ -469,7 +478,7 @@ namespace SpriteFontPlus
 			using (var canvas = new SKCanvas(ScratchDrawing))
 			{
 				canvas.Clear(SKColors.Transparent);
-				canvas.DrawShapedText2(shaper, shaper2, text, 0, -top, _paint, _paintfont, hbfont, hbfont2);
+				canvas.DrawShapedText2(shaper, shaper2, text, 0, -top, _paint, _paintfont, hbfont, hbfont2, hbBuffer);
 			}
 
 			var spanb = ScratchDrawing.GetPixelSpan();
@@ -581,6 +590,7 @@ namespace SpriteFontPlus
         {
 			var entry = GetFont(0);
 			var entry1 = Fonts.Count > 1 ? GetFont(1) : null;
+			var hbBuffer = GetHBBuffer();
 
 			//var paint = new SKPaint();
 
@@ -595,7 +605,7 @@ namespace SpriteFontPlus
 			var visiblebottom = Math.Max(Math.Max(0, entry.Font.Metrics.Descent), 0); //, entry1 == null ? 0 : entry1.Font.Metrics.Bottom);
 			var visibletop = Math.Min(Math.Min(0, entry.Font.Metrics.Ascent), 0); //, entry1 == null ? 0 : entry1.Font.Metrics.Top);
 
-			var dimx = SpriteFontPlusExtensions.MeasureShapedText2(text, FontSize, entry.Typeface, entry1?.Typeface, entry.HBFont, entry1?.HBFont);
+			var dimx = SpriteFontPlusExtensions.MeasureShapedText2(text, FontSize, entry.Typeface, entry1?.Typeface, entry.HBFont, entry1?.HBFont, hbBuffer);
 			//var dimy = visibleheight;//FontSize * 96.0 / 72.0; //TODO MULTIPLE LINES?... //entry.Font.Metrics.Descent - entry.Font.Metrics.Ascent; //TODO measure font two, if needed...
 
 			bounds.X = x;
