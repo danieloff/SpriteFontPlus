@@ -377,6 +377,10 @@ namespace SpriteFontPlus
 		}
 
 		public static SKBitmap ScratchDrawing = null;
+		public static Dictionary<(string, float, string), Rectangle> TextImageCache = null;
+		public static Rectangle TextImageLastRect = Rectangle.Empty;
+		public static int TextTopLine = 0;
+		public static int TextMaxHeight = 0;
 		public static byte[] ScratchImageBuffer = null;
 		public static Texture2D ScratchTexture = null;
 
@@ -403,6 +407,10 @@ namespace SpriteFontPlus
 			if (ScratchDrawing == null)
 			{
 				ScratchDrawing = new SKBitmap(1, 1, SKColorType.Rgba8888, SKAlphaType.Premul);
+				TextImageCache = new Dictionary<(string, float, string), Rectangle>();
+				TextImageCache = new Dictionary<(string, float, string), Rectangle>();
+				TextImageLastRect = Rectangle.Empty;
+				TextTopLine = 0;
 			}
 
 			_paint = new SKPaint();
@@ -463,29 +471,74 @@ namespace SpriteFontPlus
 			//_paintfont.Size = FontSize * 72.0f / 96.0f;
 
 
-			var dimx = SpriteFontPlusExtensions.MeasureShapedText2(text, FontSize, entry.Typeface, entry2?.Typeface, hbfont, hbfont2, hbBuffer);
-			var dimy = FontSize;
-			var top = Math.Min(entry.Font.Metrics.Top, entry2 == null ? 0 : entry2.Font.Metrics.Top);
-			var bottom = Math.Max(entry.Font.Metrics.Bottom, entry2 == null ? 0 : entry2.Font.Metrics.Bottom);
+			var dimx = (int)Math.Ceiling(SpriteFontPlusExtensions.MeasureShapedText2(text, FontSize, entry.Typeface, entry2?.Typeface, hbfont, hbfont2, hbBuffer));
+			if (dimx == 0)
+            {
+				return dimx;
+            }
+			
+			var top = (int) Math.Ceiling(Math.Min(entry.Font.Metrics.Top, entry2 == null ? 0 : entry2.Font.Metrics.Top));
+			var bottom = (int) Math.Ceiling(Math.Max(entry.Font.Metrics.Bottom, entry2 == null ? 0 : entry2.Font.Metrics.Bottom));
+			var dimy = bottom - top;
 
-			if (ScratchDrawing.Width < dimx || ScratchDrawing.Height < bottom - top)
+			int xpage = 0;
+			int ypage = 0;
+
+			if (TextImageCache.ContainsKey((text, FontSize, Fonts[0])))
+            {
+				var rect = TextImageCache[(text, FontSize, Fonts[0])];
+
+				xpage = rect.X;
+				ypage = rect.Y;
+            }
+			else
 			{
-				ScratchDrawing = new SKBitmap((int)dimx + 50, (int)dimy + 50, SKColorType.Rgba8888, SKAlphaType.Premul);
+				if (ScratchTexture == null)
+                {
+					ScratchTexture = new Texture2D(batch.GraphicsDevice, 4096, 4096);
+				}
+
+				if (ScratchDrawing.Width != dimx || ScratchDrawing.Height != dimy)
+				{
+					ScratchDrawing = new SKBitmap(dimx, dimy, SKColorType.Rgba8888, SKAlphaType.Premul);
+
+					if (ScratchImageBuffer == null)
+                    {
+						ScratchImageBuffer = new byte[4096 * 4096 * 4];
+					}
+				}
+
+				var topline = TextTopLine;
+				var rightedge = TextImageLastRect.Right;
+
+				if (rightedge + dimx > ScratchTexture.Width)
+                {
+					topline = TextTopLine + TextMaxHeight + 1;
+					rightedge = 0;
+					TextTopLine = topline;
+					TextMaxHeight = dimy;
+                }
+
+				var bottomline = topline - top;
+
+				using (var canvas = new SKCanvas(ScratchDrawing))
+				{
+					canvas.Clear(SKColors.Transparent);
+					canvas.DrawShapedText2(shaper, shaper2, text, 0, -top, _paint, _paintfont, hbfont, hbfont2, hbBuffer);
+				}
+
+				TextImageLastRect = new Rectangle(rightedge, bottomline, dimx, dimy);
+				TextImageCache[(text, FontSize, Fonts[0])] = TextImageLastRect;
+				TextMaxHeight = Math.Max(TextMaxHeight, dimy);
+
+				var spanb = ScratchDrawing.GetPixelSpan();
+
+				spanb.CopyTo(ScratchImageBuffer);
+
+				//TODO, open a new page when out of space, discard pages that aren't needed, etc
+				ScratchTexture.SetData(0, new Rectangle(rightedge, bottomline, dimx, dimy), ScratchImageBuffer, 0, spanb.Length);
 			}
-
-			UpdateScratchTexture(batch);
-
-			using (var canvas = new SKCanvas(ScratchDrawing))
-			{
-				canvas.Clear(SKColors.Transparent);
-				canvas.DrawShapedText2(shaper, shaper2, text, 0, -top, _paint, _paintfont, hbfont, hbfont2, hbBuffer);
-			}
-
-			var spanb = ScratchDrawing.GetPixelSpan();
-
-			spanb.CopyTo(ScratchImageBuffer);
-
-			ScratchTexture.SetData(ScratchImageBuffer);
+			
 
 			//y should be baseline
 
@@ -499,13 +552,13 @@ namespace SpriteFontPlus
 
 			var destRect = new Rectangle((int)Math.Round(x),
 											(int)Math.Round(desty),
-											(int)Math.Round(dimx),
-											(int)Math.Round(bottom - top));
+											(int)dimx,
+											(int)dimy);
 
-			var sourceRect = new Rectangle((int)(0),
-										(int)(0),
-										(int)(dimx),
-										(int)(bottom - top));
+			var sourceRect = new Rectangle((int)xpage,
+										(int)ypage,
+										(int)dimx,
+										(int)dimy);
 
 			batch.Draw(ScratchTexture,
 				destRect,
@@ -516,20 +569,11 @@ namespace SpriteFontPlus
 				SpriteEffects.None,
 				depth);
 
-			batch.End();
-			batch.Begin();
+			//batch.End();
+			//batch.Begin();
 
 			return dimx;
 		}
-
-        private void UpdateScratchTexture(SpriteBatch batch)
-        {
-            if (ScratchTexture == null || ScratchTexture.Width != ScratchDrawing.Width || ScratchTexture.Height != ScratchDrawing.Height)
-            {
-				ScratchTexture = new Texture2D(batch.GraphicsDevice, ScratchDrawing.Width, ScratchDrawing.Height);
-				ScratchImageBuffer = new byte[ScratchDrawing.Width * ScratchDrawing.Height * 4];
-            }
-        }
 
         internal double DrawText(SpriteBatch batch, float x, float y, StringBuilder text, Color[] glyphColors, float depth)
         {
