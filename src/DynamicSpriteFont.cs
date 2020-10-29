@@ -508,18 +508,16 @@ namespace SpriteFontPlus
 					}
 				}
 
-				var topline = TextTopLine;
 				var rightedge = TextImageLastRect.Right;
 
 				if (rightedge + dimx > ScratchTexture.Width)
                 {
-					topline = TextTopLine + TextMaxHeight + 1;
+					TextTopLine += TextMaxHeight + 1;
 					rightedge = 0;
-					TextTopLine = topline;
 					TextMaxHeight = dimy;
                 }
 
-				var bottomline = topline - top;
+				var bottomline = TextTopLine + dimy;
 
 				using (var canvas = new SKCanvas(ScratchDrawing))
 				{
@@ -527,7 +525,7 @@ namespace SpriteFontPlus
 					canvas.DrawShapedText2(shaper, shaper2, text, 0, -top, _paint, _paintfont, hbfont, hbfont2, hbBuffer);
 				}
 
-				TextImageLastRect = new Rectangle(rightedge, bottomline, dimx, dimy);
+				TextImageLastRect = new Rectangle(rightedge, TextTopLine, dimx, dimy);
 				TextImageCache[(text, FontSize, Fonts[0])] = TextImageLastRect;
 				TextMaxHeight = Math.Max(TextMaxHeight, dimy);
 
@@ -536,7 +534,10 @@ namespace SpriteFontPlus
 				spanb.CopyTo(ScratchImageBuffer);
 
 				//TODO, open a new page when out of space, discard pages that aren't needed, etc
-				ScratchTexture.SetData(0, new Rectangle(rightedge, bottomline, dimx, dimy), ScratchImageBuffer, 0, spanb.Length);
+				ScratchTexture.SetData(0, new Rectangle(rightedge, TextTopLine, dimx, dimy), ScratchImageBuffer, 0, spanb.Length);
+
+				xpage = rightedge;
+				ypage = TextTopLine;
 			}
 			
 
