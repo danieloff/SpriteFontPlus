@@ -37,6 +37,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Monogame.Extended\Source\MonoGame.Extended\MonoGame.Extended.csproj" />
+    <ProjectReference Include="..\..\MonoGame.Extended\Source\MonoGame.Extended\MonoGame.Extended.csproj" />
   </ItemGroup>
 </Project>

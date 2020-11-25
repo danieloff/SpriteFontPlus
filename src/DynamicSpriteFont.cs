@@ -421,6 +421,33 @@ namespace SpriteFontPlus
 			_paintfont = _paint.ToFont();
 			_HBBuffer = new HarfBuzzSharp.Buffer();
 		}
+		
+		public FontSystemSk(FontSystemSk source)
+		{
+			if (ScratchDrawing == null)
+			{
+				ScratchDrawing = new SKBitmap(1, 1, SKColorType.Rgba8888, SKAlphaType.Premul);
+				TextImageCache = new Dictionary<(string, float, string), Rectangle>();
+				TextImageCache = new Dictionary<(string, float, string), Rectangle>();
+				TextImageLastRect = Rectangle.Empty;
+				TextTopLine = 0;
+			}
+
+			_paint = new SKPaint();
+			_paint.Color = SKColors.White;
+			_paint.IsStroke = false;
+			_paint.IsAntialias = true;
+			_paint.LcdRenderText = true;
+			_paintfont = _paint.ToFont();
+			_HBBuffer = new HarfBuzzSharp.Buffer();
+
+			foreach (var font in source.Fonts)
+			{
+				Fonts.Add(font);
+			}
+
+			FontSize = source.FontSize;
+		}
 
 		public FontSk GetFont(int val)
 		{
@@ -895,6 +922,11 @@ namespace SpriteFontPlus
 			_fontSystem.FontSize = (float)defaultSize;
 		}
 
+		DynamicSpriteFont(DynamicSpriteFont source)
+		{
+			_fontSystem = new FontSystemSk(source._fontSystem);
+		}
+
 		public void Dispose()
 		{
 			//_fontSystem?.Dispose();
@@ -987,6 +1019,18 @@ namespace SpriteFontPlus
 		public static DynamicSpriteFont FromTtf(Stream ttfStream, double defaultSize, int textureWidth = 1024, int textureHeight = 1024, int blur = 0, int stroke = 0)
 		{
 			return FromTtf(ttfStream.ToByteArray(), defaultSize, textureWidth, textureHeight, blur, stroke);
+		}
+
+		public static DynamicSpriteFont FromDynamicSpriteFont(DynamicSpriteFont source)
+		{
+			var font = new DynamicSpriteFont(source);
+			return font;
+		}
+
+		public DynamicSpriteFont AddRef()
+		{
+			//same font but allow different sizes/styles
+			return FromDynamicSpriteFont(this);
 		}
 	}
 }
