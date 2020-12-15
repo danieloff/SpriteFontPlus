@@ -42,9 +42,9 @@ namespace SpriteFontPlus
 					var glyph = shaper.Typeface.GetGlyph(codepoint);
 					if (glyph == 0 && inside)
 					{
-						if (i - startidx - 1 > 0)
+						if (i - startidx > 0)
 						{
-							chunks1.Add((str.Substring(startidx, i - startidx - 1), inside));
+							chunks1.Add((str.Substring(startidx, i - startidx), inside));
 						}
 
 						inside = false;
@@ -52,16 +52,23 @@ namespace SpriteFontPlus
 					}
 					else if(glyph != 0 && !inside)
                     {
-						if (i - startidx - 1 > 0)
+						if (i - startidx > 0)
 						{
-							chunks1.Add((str.Substring(startidx, i - startidx - 1), inside));
+							chunks1.Add((str.Substring(startidx, i - startidx), inside));
 						}
 
 						inside = true;
 						startidx = i;
 					}
 
-					i += char.IsSurrogatePair(str, i) ? 2 : 1;
+					if (char.IsSurrogatePair(str, i))
+					{
+						i += 2;
+					}
+					else
+                    {
+						i += 1;
+                    }
 					
 					if (i == str.Length)
 					{
@@ -218,9 +225,9 @@ namespace SpriteFontPlus
 					var glyph = typeface.GetGlyph(codepoint);
 					if (glyph == 0 && inside)
 					{
-						if (i - startidx - 1 > 0)
+						if (i - startidx > 0)
 						{
-							chunks1.Add((str.Substring(startidx, i - startidx - 1), inside));
+							chunks1.Add((str.Substring(startidx, i - startidx), inside));
 						}
 
 						inside = false;
@@ -228,9 +235,9 @@ namespace SpriteFontPlus
 					}
 					else if (glyph != 0 && !inside)
 					{
-						if (i - startidx - 1 > 0)
+						if (i - startidx > 0)
 						{
-							chunks1.Add((str.Substring(startidx, i - startidx - 1), inside));
+							chunks1.Add((str.Substring(startidx, i - startidx), inside));
 						}
 
 						inside = true;
